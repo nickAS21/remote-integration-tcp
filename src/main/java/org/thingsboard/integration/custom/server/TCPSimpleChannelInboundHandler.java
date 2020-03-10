@@ -73,7 +73,9 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
                 ctx.writeAndFlush(bb);
                 log.error("sessionId + imeiHex + payloadHex  {}", (sessionId + " " + imeiHex + " " + Hex.toHexString(dataAVL)));
                 CustomResponse response = new CustomResponse();
-                chTCPIntegration.process(new CustomIntegrationMsg(Hex.toHexString(bytesCRC), response, this.imeiHex));
+                byte[] payload = new byte[bytesCRC.length-1];
+                System.arraycopy(bytesCRC, 0, payload, 0, bytesCRC.length-1);
+                chTCPIntegration.process(new CustomIntegrationMsg(Hex.toHexString(payload), response, this.imeiHex));
                 log.error("chTCPIntegration.process  {}", this.imeiHex);
             }
             dataLength = 0;

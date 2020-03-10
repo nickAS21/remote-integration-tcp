@@ -50,13 +50,13 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
     private Channel serverChannel;
     private TCPClient client1;
     private TCPClient client2;
-    private String deviceName;
-
-    private boolean initData = false;
-    private int dataLength = 0;
-    private int posLast = 0;
-    byte[] dataAVL;
-    String imeiHex;
+//    private String deviceName;
+//
+//    private boolean initData = false;
+//    private int dataLength = 0;
+//    private int posLast = 0;
+//    byte[] dataAVL;
+//    String imeiHex;
 
 
     @Override
