@@ -30,21 +30,23 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class CustomClient {
+public class TCPClient {
 
-    private final ScheduledExecutorService scheduledExecutorService;
+    public final ScheduledExecutorService scheduledExecutorService;
     private final NioEventLoopGroup workGroup;
     private final Random random;
-    private final long msgGenerationIntervalMs;
+    public final long msgGenerationIntervalMs;
+    private String client_imev;
+    public Channel clientChannel;
 
-    private Channel clientChannel;
-
-    public CustomClient(int port, long msgGenerationIntervalMs) {
+    public TCPClient(int port, long msgGenerationIntervalMs, String client_imev) {
         this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         this.workGroup = new NioEventLoopGroup();
         this.random = new Random();
         this.msgGenerationIntervalMs = msgGenerationIntervalMs;
+        this.client_imev = client_imev;
         try {
+            TCPClient tcpClient = this;
             Bootstrap bootstrap = new Bootstrap();
             bootstrap.group(this.workGroup);
             bootstrap.channel(NioSocketChannel.class);
@@ -52,51 +54,54 @@ public class CustomClient {
             bootstrap.handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 protected void initChannel(SocketChannel socketChannel) {
-//                    socketChannel.pipeline().addLast(new StringEncoder(), new StringDecoder(), new LineBasedFrameDecoder(1024));
                     socketChannel.pipeline().addLast("encoder", new ByteArrayEncoder());
                     socketChannel.pipeline().addLast("decoder", new ByteArrayDecoder());
-                    socketChannel.pipeline().addLast(new SimpleChannelInboundHandler<Object>() {
-                        @Override
-                        protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
-                            byte[] msgBytes = (byte[]) msg;
-                            String testIn = new String(msgBytes);
-
-                            log.debug("Client received the message: {}",testIn);
-                            if (testIn.equals("Hello from ThingsBoard!")) {
-                                log.debug("Starting generator...");
-                                startGenerator();
-                            }
-                        }
-                    });
+                    socketChannel.pipeline().addLast(new TCPClientSimpleChannelInboundHandler(tcpClient, client_imev));
                 }
             });
             clientChannel = bootstrap.connect("localhost", port).sync().channel();
-            byte [] bbOut = "Hello to ThingsBoard! My name is [Device B]".getBytes();
-            clientChannel.writeAndFlush(bbOut);
+//            byte [] client_imevB = client_imev.getBytes();
+            clientChannel.writeAndFlush(generateImevByte());
         } catch (Exception e) {
             log.error("Failed to init TCP client!", e);
             throw new RuntimeException();
         }
     }
 
-    private void startGenerator() {
-        this.scheduledExecutorService.scheduleAtFixedRate(() ->
-                clientChannel.writeAndFlush(generateData()), 0, this.msgGenerationIntervalMs, TimeUnit.MILLISECONDS);
+    private byte[] generateImevByte() {
+        byte imev[] = new byte[17];
+        byte[] imevBB = client_imev.getBytes();
+        byte[] imevH = new byte[]{0x00, 0x0F};
+        System.arraycopy(imevH, 0, imev, 0, 2);
+        System.arraycopy(imevBB, 0, imev, 2, 15);
+        return imev;
     }
 
-    private String generateData() {
-        int firstV = generateValue(10, 40);
-        int secondV = generateValue(0, 100);
-        int thirdV = generateValue(0, 100);
-        return firstV + "," + secondV + "," + thirdV;
-    }
+//    private void startGenerator() {
+//        this.scheduledExecutorService.scheduleAtFixedRate(() ->
+////                clientChannel.writeAndFlush(generateData()), 0, this.msgGenerationIntervalMs, TimeUnit.MILLISECONDS);
+//                clientChannel.writeAndFlush(generateImevByte()), 0, this.msgGenerationIntervalMs, TimeUnit.MILLISECONDS);
+//    }
 
-    private int generateValue(int min, int max) {
-        if (min >= max) {
-            throw new IllegalArgumentException("Max value must be greater than min value!");
-        }
-        return random.nextInt((max - min) + 1) + min;
-    }
+//    private String generateData() {
+//        int firstV = generateValue(10, 40);
+//        int secondV = generateValue(0, 100);
+//        int thirdV = generateValue(0, 100);
+//        return firstV + "," + secondV + "," + thirdV;
+//    }
+
+//    private byte [] generateImevByte() {
+//        byte imev [] = new byte [17];
+//
+//        return new byte[]{0x00, 0x0F};
+//    }
+
+//    private int generateValue(int min, int max) {
+//        if (min >= max) {
+//            throw new IllegalArgumentException("Max value must be greater than min value!");
+//        }
+//        return random.nextInt((max - min) + 1) + min;
+//    }
 
     public void destroy() {
         if (this.scheduledExecutorService != null) {

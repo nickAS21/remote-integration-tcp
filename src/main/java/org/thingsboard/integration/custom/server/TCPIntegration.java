@@ -13,39 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.integration.custom.basic;
+package org.thingsboard.integration.custom.server;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.bytes.ByteArrayDecoder;
 import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.util.encoders.Hex;
 import org.thingsboard.integration.api.AbstractIntegration;
 import org.thingsboard.integration.api.TbIntegrationInitParams;
 import org.thingsboard.integration.api.data.UplinkData;
 import org.thingsboard.integration.api.data.UplinkMetaData;
-import org.thingsboard.integration.custom.client.CustomClient;
+import org.thingsboard.integration.custom.client.TCPClient;
 import org.thingsboard.integration.custom.message.CustomIntegrationMsg;
 import org.thingsboard.integration.custom.message.CustomResponse;
-import org.thingsboard.integration.util.CRC16;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.CRC32;
-import java.util.zip.Checksum;
 
 @Slf4j
-public class CustomIntegration extends AbstractIntegration<CustomIntegrationMsg> {
+public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
 
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final int bindPort = 1994;
@@ -54,7 +48,8 @@ public class CustomIntegration extends AbstractIntegration<CustomIntegrationMsg>
     private NioEventLoopGroup bossGroup;
     private NioEventLoopGroup workGroup;
     private Channel serverChannel;
-    private CustomClient client;
+    private TCPClient client1;
+    private TCPClient client2;
     private String deviceName;
 
     private boolean initData = false;
@@ -72,6 +67,7 @@ public class CustomIntegration extends AbstractIntegration<CustomIntegrationMsg>
             bossGroup = new NioEventLoopGroup();
             workGroup = new NioEventLoopGroup();
             ServerBootstrap bootstrap = new ServerBootstrap();
+            TCPIntegration myTCPIntegration = this;
             bootstrap.group(bossGroup, workGroup);
             bootstrap.channel(NioServerSocketChannel.class);
             bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
@@ -79,79 +75,15 @@ public class CustomIntegration extends AbstractIntegration<CustomIntegrationMsg>
                 protected void initChannel(SocketChannel socketChannel) throws Exception {
                     socketChannel.pipeline().addLast("encoder", new ByteArrayEncoder());
                     socketChannel.pipeline().addLast("decoder", new ByteArrayDecoder());
-                    socketChannel.pipeline().addLast(new SimpleChannelInboundHandler<Object>() {
-                        @Override
-                        protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
-                            byte[] msgBytes = (byte[]) msg;
-
-                            if (msgBytes.length > 1 && msgBytes[0] == 0 && msgBytes[1] == 0xF) {
-                                byte [] imeiB = new byte [msgBytes.length - 2];
-                                System.arraycopy(msgBytes, 2, imeiB, 0, imeiB.length);
-//                                imeiHex = Hex.toHexString(imeiB);
-                                imeiHex =new String(imeiB);
-                                log.error("imeiHex {}", imeiHex);
-                                byte[] bb = {0x01};
-                                ctx.writeAndFlush(bb);
-                            } else {
-                                int msgLen = msgBytes.length;
-                                if (msgBytes.length > 4 && (msgBytes[0] == 0 && msgBytes[1] == 0 && msgBytes[2] == 0 && msgBytes[3] == 0)) {
-                                    initData = false;
-                                    byte[] msgBytesLen = new byte[4];
-                                    System.arraycopy(msgBytes, 4, msgBytesLen, 0, 4);
-                                    dataLength = Integer.parseInt(Hex.toHexString(msgBytesLen), 16);
-                                    dataAVL = new byte[dataLength + 12];
-                                    System.arraycopy(msgBytes, 0, dataAVL, posLast, msgLen);
-                                    posLast += msgLen;
-                                    if (dataLength > msgLen) {
-                                        initData = true;
-                                    } else {
-                                        initData = false;
-                                    }
-                                } else if (initData) {
-                                    System.arraycopy(msgBytes, 0, dataAVL, posLast, msgLen);
-                                    posLast = 0;
-                                    initData = false;
-                                }
-                            }
-                            if (!initData && dataAVL != null && dataAVL.length > 0) {
-                                int numberOfData1 = dataAVL[9];
-                                int numberOfData2 = dataAVL[dataAVL.length - 5];
-                                byte[] msgBytesLen = new byte[4];
-                                System.arraycopy(dataAVL, dataAVL.length - 4, msgBytesLen, 0, 4);
-                                int crc_16 = Integer.parseInt(Hex.toHexString(msgBytesLen), 16);
-                                CRC16 crc16 = new CRC16();
-                                byte[] bytesCRC = new byte [dataLength];
-                                System.arraycopy(dataAVL, 8, bytesCRC , 0 , dataLength );
-                                int crc_16_val = crc16.getValue(bytesCRC);
-                                if (numberOfData1 == numberOfData2 && crc_16 == crc_16_val) {
-                                    ctx.writeAndFlush(numberOfData1);
-                                    log.error("imeiHex + payloadHex  {}", (imeiHex + " " + Hex.toHexString(dataAVL)));
-                                    CustomResponse response = new CustomResponse();
-                                    process(new CustomIntegrationMsg(Hex.toHexString(bytesCRC), response));
-                                }
-                                dataLength = 0;
-                                initData = false;
-                            }
-                            // test
-                            String test = "Hello to ThingsBoard! My name is [Device B]";
-                            String testIn = new String(msgBytes);
-                            if (test.equals(testIn)) {
-                                String testOut = "Hello from ThingsBoard!";
-                                log.error("testIn  {}", testIn);
-                                byte[] bytesCRC = testOut.getBytes();
-//                                ctx.writeAndFlush(bbOut);
-                                imeiHex = "Device B";
-                                CustomResponse response = new CustomResponse();
-                                process(new CustomIntegrationMsg(Hex.toHexString(bytesCRC), response));
-                            }
-
-                        }
-                    });
+                    socketChannel.pipeline().addLast(new TCPSimpleChannelInboundHandler(myTCPIntegration));
                 }
             });
             int port = getBindPort(configuration);
             serverChannel = bootstrap.bind(port).sync().channel();
-            client = new CustomClient(port, getMsgGeneratorIntervalMs(configuration));
+            String client_imev1 = "359633100458591";
+            String client_imev2 = "359633100458592";
+            client1 = new TCPClient(port, getMsgGeneratorIntervalMs(configuration), client_imev1);
+            client2 = new TCPClient(port, getMsgGeneratorIntervalMs(configuration), client_imev2);
         } catch (Exception e) {
             log.error("Failed to init TCP server!", e);
             throw new RuntimeException();
@@ -164,7 +96,8 @@ public class CustomIntegration extends AbstractIntegration<CustomIntegrationMsg>
 
     @Override
     public void destroy() {
-        client.destroy();
+        client1.destroy();
+        client2.destroy();
         try {
             serverChannel.close().sync();
         } catch (Exception e) {
@@ -185,7 +118,8 @@ public class CustomIntegration extends AbstractIntegration<CustomIntegrationMsg>
         String status = "OK";
         Exception exception = null;
         try {
-            response.setResult(doProcess(customIntegrationMsg.getMsg()));
+            log.error("process  {}", (customIntegrationMsg.getImev()));
+            response.setResult(doProcess(customIntegrationMsg.getMsg(), customIntegrationMsg.getImev()));
             integrationStatistics.incMessagesProcessed();
         } catch (Exception e) {
             log.debug("Failed to apply data converter function: {}", e.getMessage(), e);
@@ -205,10 +139,11 @@ public class CustomIntegration extends AbstractIntegration<CustomIntegrationMsg>
         }
     }
 
-    private String doProcess(String msg) throws Exception {
+    private String doProcess(String msg, String imei) throws Exception {
         byte[] data = mapper.writeValueAsBytes(msg);
         Map<String, String> metadataMap = new HashMap<>(metadataTemplate.getKvMap());
-        metadataMap.put("imei", imeiHex);
+//        metadataMap.put("imei", imeiHex);
+        metadataMap.put("imei", imei);
         List<UplinkData> uplinkDataList = convertToUplinkDataList(context, data, new UplinkMetaData(getUplinkContentType(), metadataMap));
         if (uplinkDataList != null && !uplinkDataList.isEmpty()) {
             for (UplinkData uplinkData : uplinkDataList) {
@@ -249,4 +184,73 @@ public class CustomIntegration extends AbstractIntegration<CustomIntegrationMsg>
     }
 
 
+//    private class MySimpleChannelInboundHandler extends SimpleChannelInboundHandler<Object> {
+//
+//        @Override
+//        protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
+//            byte[] msgBytes = (byte[]) msg;
+//
+//            if (msgBytes.length > 1 && msgBytes[0] == 0 && msgBytes[1] == 0xF) {
+//                byte [] imeiB = new byte [msgBytes.length - 2];
+//                System.arraycopy(msgBytes, 2, imeiB, 0, imeiB.length);
+////                                imeiHex = Hex.toHexString(imeiB);
+//                imeiHex =new String(imeiB);
+//                log.error("imeiHex {}", imeiHex);
+//                byte[] bb = {0x01};
+//                ctx.writeAndFlush(bb);
+//            } else {
+//                int msgLen = msgBytes.length;
+//                if (msgBytes.length > 4 && (msgBytes[0] == 0 && msgBytes[1] == 0 && msgBytes[2] == 0 && msgBytes[3] == 0)) {
+//                    initData = false;
+//                    byte[] msgBytesLen = new byte[4];
+//                    System.arraycopy(msgBytes, 4, msgBytesLen, 0, 4);
+//                    dataLength = Integer.parseInt(Hex.toHexString(msgBytesLen), 16);
+//                    dataAVL = new byte[dataLength + 12];
+//                    System.arraycopy(msgBytes, 0, dataAVL, posLast, msgLen);
+//                    posLast += msgLen;
+//                    if (dataLength > msgLen) {
+//                        initData = true;
+//                    } else {
+//                        initData = false;
+//                    }
+//                } else if (initData) {
+//                    System.arraycopy(msgBytes, 0, dataAVL, posLast, msgLen);
+//                    posLast = 0;
+//                    initData = false;
+//                }
+//            }
+//            if (!initData && dataAVL != null && dataAVL.length > 0) {
+//                int numberOfData1 = dataAVL[9];
+//                int numberOfData2 = dataAVL[dataAVL.length - 5];
+//                byte[] msgBytesLen = new byte[4];
+//                System.arraycopy(dataAVL, dataAVL.length - 4, msgBytesLen, 0, 4);
+//                int crc_16 = Integer.parseInt(Hex.toHexString(msgBytesLen), 16);
+//                CRC16 crc16 = new CRC16();
+//                byte[] bytesCRC = new byte [dataLength];
+//                System.arraycopy(dataAVL, 8, bytesCRC , 0 , dataLength );
+//                int crc_16_val = crc16.getValue(bytesCRC);
+//                if (numberOfData1 == numberOfData2 && crc_16 == crc_16_val) {
+//                    ctx.writeAndFlush(numberOfData1);
+//                    log.error("imeiHex + payloadHex  {}", (imeiHex + " " + Hex.toHexString(dataAVL)));
+//                    CustomResponse response = new CustomResponse();
+//                    process(new CustomIntegrationMsg(Hex.toHexString(bytesCRC), response));
+//                }
+//                dataLength = 0;
+//                initData = false;
+//            }
+//            // test
+//            String test = "Hello to ThingsBoard! My name is [Device B]";
+//            String testIn = new String(msgBytes);
+//            if (test.equals(testIn)) {
+//                String testOut = "Hello from ThingsBoard!";
+//                log.error("testIn  {}", testIn);
+//                byte[] bytesCRC = testOut.getBytes();
+////                                ctx.writeAndFlush(bbOut);
+//                imeiHex = "Device B";
+//                CustomResponse response = new CustomResponse();
+//                process(new CustomIntegrationMsg(Hex.toHexString(bytesCRC), response));
+//            }
+//
+//        }
+//    }
 }
