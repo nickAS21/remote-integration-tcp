@@ -1,9 +1,17 @@
-var payload = "0811000000f9d0b30d6000000000000000000000000000000000000f07ef01f00150011503c8004502715b06b50000b60000422f4c180000430fb844000002f10000639d100000000000000000f9d0ae798000000000000000000000000000000000000f07ef01f00150011503c8004502715b06b50000b60000422f4e180000430fb844000002f10000639d100000000000000000f9d0a9e5a000000000000000000000000000000000000f07ef01f00150011504c8004502715b06b50000b60000422f50180000430fb844000002f10000639d100000000000000000f9d0a551c000000000000000000000000000000000000f07ef01f00150011503c8004502715b06b50000b60000422f49180000430fb844000002f10000639d100000000000000000f9d0a0bde000000000000000000000000000000000000f07ef01f00150011503c8004502715b06b50000b60000422f4e180000430fb844000002f10000639d100000000000000000f9d09c2a0000000000000000000000000000000000000f07ef01f00150011503c8004502715b06b50000b60000422f50180000430fb844000002f10000639d100000000000000000f9d097962000000000000000000000000000000000000f07ef01f00150011504c8004502715b06b50000b60000422f4b180000430fb844000002f10000639d100000000000000000f9d093024000000000000000000000000000000000000f07ef01f00150011503c8004502715b06b50000b60000422f50180000430fb844000002f10000639d100000000000000000f9d08e6e6000000000000000000000000000000000000f07ef01f00150011504c8004502715b06b50000b60000422f55180000430fb844000002f10000639d100000000000000000f9d089da8000000000000000000000000000000000000f07ef01f00150011504c8004502715b06b50000b60000422f46180000430fb844000002f10000639d100000000000000000f9d08546a000000000000000000000000000000000000f07ef01f00150011504c8004502715b06b50000b60000422f49180000430fb844000002f10000639d100000000000000000f9d080b2c000000000000000000000000000000000000f07ef01f00150011504c8004502715b06b50000b60000422f53180000430fb844000002f10000639d100000000000000000f9d07c1ee000000000000000000000000000000000000f07ef01f00150011504c8004502715b06b50000b60000422f50180000430fb844000002f10000639d100000000000000000f9d0778b0000000000000000000000000000000000000f07ef01f00150011503c8004502715b06b50000b60000422f1e180000430fb744000002f10000639d100000000000000000f9d072f72000000000000000000000000000000000000f07ef01f00150011504c8004502715b06b50000b60000422f4e180000430fb844000002f10000639d100000000000000000f9d06e634000000000000000000000000000000000000f07ef01f00150011504c8004502715b06b50000b60000422f54180000430fb844000002f10000639d100000000000000000f9d069cf6000000000000000000000000000000000000f07ef01f00150011503c8004502715b06b50000b60000422f52180000430fb844000002f10000639d100000000000";
-// 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00     00 00 0F
+var payload = "0811000000f9d0e26a6a00000000000000000000000000000000f00f07ef00f00050001503c8004502715306b50000b600004208e7180000430f7044000002f10000639d100000000000000000f9d0e26a6000000000000000000000000000000000ef0f07ef00f00050001503c8004502715306b50000b600004208e7180000430f7044000002f10000639d100000000000000000f9d0e2667800000000000000000000000000000000000f07ef01f00150001503c8004502715606b50000b60000420baa180000430f8444000002f10000639d100000000000000000f9d0e0b0f800000000000000000000000000000000000f07ef01f00150011504c8004502715b06b50000b60000422f4c180000430fb844000002f10000639d100000000000000000f9d0dc1d1800000000000000000000000000000000000f07ef01f00150011504c8004502715b06b50000b60000422f49180000430fb844000002f10000639d100000000000000000f9d0d7893800000000000000000000000000000000000f07ef01f00150011503c8004502715b06b50000b60000422f4c180000430fb844000002f10000639d100000000000000000f9d0d2f55800000000000000000000000000000000000f07ef01f00150011503c8004502715b06b50000b60000422f4d180000430fb844000002f10000639d100000000000000000f9d0ce617800000000000000000000000000000000000f07ef01f00150011503c8004502715b06b50000b60000422f4a180000430fb844000002f10000639d100000000000000000f9d0c9cd9800000000000000000000000000000000000f07ef01f00150011504c8004502715b06b50000b60000422f4e180000430fb844000002f10000639d100000000000000000f9d0c539b800000000000000000000000000000000000f07ef01f00150011504c8004502715b06b50000b60000422f4e180000430fb844000002f10000639d100000000000000000f9d0c0a5d800000000000000000000000000000000000f07ef01f00150011504c8004502715b06b50000b60000422f50180000430fb844000002f10000639d100000000000000000f9d0bc11f800000000000000000000000000000000000f07ef01f00150011504c8004502715b06b50000b60000422f49180000430fb844000002f10000639d100000000000000000f9d0b30d6000000000000000000000000000000000000f07ef01f00150011503c8004502715b06b50000b60000422f4c180000430fb844000002f10000639d100000000000000000f9d0ae798000000000000000000000000000000000000f07ef01f00150011503c8004502715b06b50000b60000422f4e180000430fb844000002f10000639d100000000000000000f9d0a9e5a000000000000000000000000000000000000f07ef01f00150011504c8004502715b06b50000b60000422f50180000430fb844000002f10000639d100000000000000000f9d0a551c000000000000000000000000000000000000f07ef01f00150011503c8004502715b06b50000b60000422f49180000430fb844000002f10000639d100000000000000000f9d0a0bde000000000000000000000000000000000000f07ef01f00150011503c8004502715b06b50000b60000422f4e180000430fb844000002f10000639d1000000000001100005249";
+//  0811        ts
+//  00 00 00 f9 d0 e2 6a 6a
+//  00
+//  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+//  f0 0f 07 ef00f00050001503c8004502715306b50000b
 //    010101010202020203030404050606
-//     15  n1                                                  n2                                                                       n4                            n8
-//  00 0f  07  ef 01 f0 01  50 01  15 04  c8 00  45 02  71 5a  06  b5 00  00 b6  00 00   42 2f 45    18  00 00  43 0f b3   44  00  00   02  f1 00 00 63 9d   10 00 00 00 00
-//  00  00 00 00f9cf2d4f   f000000000000000000000000000000000000f07ef01f00150011504c8004502715a06b50000b60000422f47180000430fb344000002f10000639d100000000000000000f9cf28bc1000000000000000000000000000000000000f07ef01f00150011504c8004502715a06b50000b60000422f49180000430fb344000002f10000639d100000000000000000f9cf242830000000000000000000
+//     15  n1                                                  n2                                                                        n4                                    n8
+//  00 0f  07  ef 01 f0 01  50 01  15 04  c8 00  45 02  71 5a  06  b5 00  00   b6 00 00   42 2f 45    18  00 00  43 0f b3   44  00  00   02  f1 00 00 63 9d   10 00 00 00 00   00
+//    ts
+//  00 00 00 f9 cf 2d 4f f0
+//  00
+//  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+//  00 0f 07 ef01f00150011504c8004502715a06b50000b60000422f47180000430fb344000002f10000639d100000000000000000f9cf28bc1000000000000000000000000000000000000f07ef01f00150011504c8004502715a06b50000b60000422f49180000430fb344000002f10000639d100000000000000000f9cf242830000000000000000000
 //              0    1      2      3      4      5      6          0          1           2          3           4          5                0             1
 var metadata = {
     "integrationName": "CUSTOM",
@@ -46,10 +54,12 @@ function Decoder(payload, metadata) {
     var payloadStr = decodeToJson(payload);
     var payloadB = hexStringToBytes(payloadStr);
     var codec = payloadB[0];
-    var numberData = payloadB[1];
+    var numberData1 = payloadB[1];
     var avlDataStrLast;
     var avlDataBLast;
-    var ioElementLast;
+    var ioElementLastStr;
+    var y = 0;
+    var lenByte = 2;
 
 
 
@@ -82,33 +92,43 @@ function Decoder(payload, metadata) {
     }
 
     function getTelemetry () {
-        var tel = [];
-        var y = 0;
-        var len = 0;
+        var telemetry = [];
+        telemetry["numberOfData"] =  numberData1;
+        y = 0;
         avlDataStrLast = payloadStr.substr(4);
         avlDataBLast = hexStringToBytes(avlDataStrLast);
-        for (var i = 0; i < 1; i++ ) {
-            var timeMS = parseInt(avlDataStrLast.substr(0, 16), 16);
-            var time = (new Date(timeMS)).toLocaleString();
-            var priority = constants.priority[avlDataStrLast[8]];
-            var gpsElementStr = avlDataStrLast.substr(22, 30);
-            ioElementLast = payloadStr.substr(52, payloadStr.length-54);
 
+
+        for (var i = 0; i < numberData1; i++ ) {
+            var len = 16;
+            var timeMS = parseInt(avlDataStrLast.substr(y, len), 16);
+            y+=len;
+            // var time = (new Date(timeMS)).toLocaleString();
+            var priority = constants.priority[avlDataBLast[8]];
+            y+=2;
+            len = 30;
+            var gpsElementStr = avlDataStrLast.substr(y, len);
+            y += len;
+            ioElementLastStr = avlDataStrLast.substr(y);
             var avlData = {
-                timeMS: timeMS,
-                time: time,
-                numberOfData: payloadB[1],
-                priority: priority,
-                gpsElement: getGpsElement (gpsElementStr),
-                eventIO: getEvent_IO ()
+                ts: timeMS,
+                values: getAVLData (priority, gpsElementStr, ioElementLastStr)
             };
-            tel.push(avlData);
+            telemetry.push(avlData);
         }
-        return tel;
+        return telemetry;
     }
 
-    function getGpsElement (gpsElementStr) {
+    function getAVLData (priority, gpsElementStr, ioElementLastStr) {
+        var avlData = getGpsElement (priority, gpsElementStr);
+        addIoElement (avlData, ioElementLastStr);
+        return avlData;
+
+    }
+
+    function getGpsElement (priority, gpsElementStr) {
         return {
+            priority: priority,
             longitude: parseInt(gpsElementStr.substr(0, 8), 16),
             latitude: parseInt(gpsElementStr.substr(8, 8), 16),
             altitude: parseInt(gpsElementStr.substr(16, 4), 16),
@@ -116,9 +136,7 @@ function Decoder(payload, metadata) {
             satellites: parseInt(gpsElementStr.substr(24, 2), 16),
             speed: parseInt(gpsElementStr.substr(26, 4), 16)
         }
-
     }
-
 
     function getNameDevice(deviceName) {
         if (metadata['imei']) {
@@ -128,31 +146,60 @@ function Decoder(payload, metadata) {
         }
     }
 
-    function getEvent_IO() {
-        var y = 0;
-        var len = 2;
-        var rez = {};
-        rez["eventIoId"] = parseInt(ioElementLast.substr(y, len), 16);
-        y +=len;
-        rez["totalIo"] = parseInt(ioElementLast.substr(y, len), 16);
-        y +=len;
-        var oneByteIo = parseInt(ioElementLast.substr(y, len), 16);
-        y +=len;
-        console.log("oneByteIo", oneByteIo);
-        rez["oneByteIo"] = oneByteIo;
+    function addIoElement (avlData, ioElementLastStr) {
+        // var nameIoId;
+        // var rez = {};
+        y = 0;
+        avlData["eventIoId"] = parseInt(ioElementLastStr.substr(y, lenByte), 16);
+        y +=lenByte;
+        var totalIo = parseInt(ioElementLastStr.substr(y, lenByte), 16);
+       // console.log("totalIo", totalIo);forByteIo
+        y +=lenByte;
+        var oneByteIo = parseInt(ioElementLastStr.substr(y, lenByte), 16);
+        //console.log("oneByteIo", oneByteIo, y);
+        y +=lenByte;
         if (oneByteIo > 0) {
-           for (var i=0; i < oneByteIo*2; i+=2) {
-               rez["oneByteIoId_" + i/2] = parseInt(ioElementLast.substr(y, len), 16);
-               y += len;
-               rez["oneByteIoVal_" + i/2] = parseInt(ioElementLast.substr(y, len), 16);
-               y += len;
-           }
+            getByteIo (avlData, oneByteIo, 2);
+           // for (var i=0; i < oneByteIo*2; i+=2) {
+           //     nameIoId = parseInt(ioElementLastStr.substr(y, len), 16);
+           //     y += len;
+           //     avlData[nameIoId] = parseInt(ioElementLastStr.substr(y, len), 16);
+           //     y += len;
+           // }
         }
-        // console.log("y", y);
-        // console.log("next", parseInt(ioElementLast.substr(y, len), 16));
-        // console.log("ioElement", ioElementLast);
-        return rez;
+        var twoByteIo = parseInt(ioElementLastStr.substr(y, lenByte), 16);
+        y +=lenByte;
+       // console.log("twoByteIo", twoByteIo, y);
+        if (twoByteIo > 0) {
+            getByteIo (avlData,twoByteIo, 4);
+        }
+        var forByteIo = parseInt(ioElementLastStr.substr(y, lenByte), 16);
+        y +=lenByte;
+       // console.log("forByteIo", forByteIo, y);
+         if (forByteIo > 0) {
+            getByteIo (avlData,forByteIo, 8);
+        }
+        var eightByteIo = parseInt(ioElementLastStr.substr(y, lenByte), 16);
+        y +=lenByte;
+        // console.log("eightByteIo", eightByteIo, y);
+        if (eightByteIo > 0) {
+            getByteIo (avlData,forByteIo, 16);
+        }
+        //console.log("ioElement  ", y, ioElementLastStr);
+        avlDataStrLast = ioElementLastStr.slice(y);
+        y =0;
+        //console.log("avlDataStrLast", y,avlDataStrLast);
 
+    }
+
+    function getByteIo (avlData, cnt, lenB) {
+        var nameIoId;
+        for (var i=0; i < cnt*2; i+=2) {
+            nameIoId = parseInt(ioElementLastStr.substr(y, lenByte), 16);
+            y += lenByte;
+            avlData[nameIoId] = parseInt(ioElementLastStr.substr(y, lenB), 16);
+            y += lenB;
+        }
     }
 
 
