@@ -30,23 +30,38 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
         byte[] msgBytes = (byte[]) msg;
         TCPIntegration chTCPIntegration = this.TCPIntegration;
         if (msgBytes.length > 1 && msgBytes[0] == 0 && msgBytes[1] == 0xF) {
-//            log.error("sessionId + msgBytes {}", sessionId + " " + Hex.toHexString(msgBytes));
+            log.error("sessionId + msgBytes {}", sessionId + " " + Hex.toHexString(msgBytes));
             byte[] imeiB = new byte[msgBytes.length - 2];
             System.arraycopy(msgBytes, 2, imeiB, 0, imeiB.length);
             this.imeiHex = new String(imeiB);
-            byte[] bb = {0x01};
-            ctx.writeAndFlush(bb);
+//            byte[] bb = {0x01};
+//            ctx.writeAndFlush(bb);
+
+            String newValId = "03";
+            byte [] valId = newValId.getBytes();
+            byte[] bbSent = {0x01, 0x09, 0x03, 0x00, 0x01, 0x00, 0x64, 0x00, 0x02, 0x00, 0x03};
+            bbSent[9] = valId[0];
+            bbSent[10] = valId[1];
+
+            ctx.writeAndFlush(bbSent);
+            log.error("bbSent {}", Hex.toHexString(bbSent));
         } else {
             int msgLen = msgBytes.length;
+            log.error("sessionId + msgBytes {}", sessionId + " " + Hex.toHexString(msgBytes));
             if (msgBytes.length > 4 && (msgBytes[0] == 0 && msgBytes[1] == 0 && msgBytes[2] == 0 && msgBytes[3] == 0)) {
 //                log.error("sessionId + msgBytes {}", sessionId + " " + Hex.toHexString(msgBytes));
                 initData = false;
                 byte[] msgBytesLen = new byte[4];
+
                 System.arraycopy(msgBytes, 4, msgBytesLen, 0, 4);
                 dataLength = Integer.parseInt(Hex.toHexString(msgBytesLen), 16);
                 dataAVL = new byte[dataLength + 12];
                 System.arraycopy(msgBytes, 0, dataAVL, posLast, msgLen);
                 posLast += msgLen;
+//
+//                byte[] msgBytes1 = new byte[1];
+//                System.arraycopy(msgBytes, 9,msgBytes1, 0, 1);
+//                ctx.writeAndFlush(msgBytes1);
                 if (dataLength > msgLen) {
                     initData = true;
                 } else {
@@ -69,14 +84,18 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
             System.arraycopy(dataAVL, 8, bytesCRC, 0, dataLength);
             int crc_16_val = crc16.getValue(bytesCRC);
             if (numberOfData1 == numberOfData2 && crc_16 == crc_16_val) {
-                byte[] bb =  {(byte) numberOfData1};
+                byte[] bb =  new byte [1];
+//                String bbStr = "0707070707";
+//                byte[] bb1 =  bbStr.getBytes();
+                bb[0]  = (byte )numberOfData1 ;
                 ctx.writeAndFlush(bb);
-                log.error("sessionId + imeiHex + payloadHex  {}", (sessionId + " " + imeiHex + " " + Hex.toHexString(dataAVL)));
+//                ctx.writeAndFlush(bb1);
+                log.error("sessionId + imeiHex + payloadHex  {}", (sessionId + " " + imeiHex + " " + Hex.toHexString(dataAVL)) + " " + Hex.toHexString(bb));
                 CustomResponse response = new CustomResponse();
                 byte[] payload = new byte[bytesCRC.length-1];
                 System.arraycopy(bytesCRC, 0, payload, 0, bytesCRC.length-1);
                 chTCPIntegration.process(new CustomIntegrationMsg(Hex.toHexString(payload), response, this.imeiHex));
-                log.error("chTCPIntegration.process  {}", this.imeiHex);
+//                log.error("chTCPIntegration.process  {}", this.imeiHex);
             }
             dataLength = 0;
             initData = false;

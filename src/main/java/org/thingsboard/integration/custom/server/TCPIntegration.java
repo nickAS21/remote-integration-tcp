@@ -118,7 +118,7 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
         String status = "OK";
         Exception exception = null;
         try {
-            log.error("process  {}", (customIntegrationMsg.getImev()));
+//            log.error("process  {}", (customIntegrationMsg.getImev()));
             response.setResult(doProcess(customIntegrationMsg.getMsg(), customIntegrationMsg.getImev()));
             integrationStatistics.incMessagesProcessed();
         } catch (Exception e) {
