@@ -46,21 +46,34 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
                          0x00, 0x00, (byte)0x40, 0x7B};
 
 //        byte [] sentData = {0x73, 0x65, 0x74, 0x64, 0x69, 0x67, 0x6f, 0x75, 0x74, 0x20, 0x31, 0x20, 0x36, 0x30};
-        int paramId = 100;
-        byte [] sentData = {0x03};
-        SentMsg sentMsg = new SentMsg();
-        byte [] sentBB = sentMsg.getNewMsg(1,  5,  sentData,  paramId);
+                    log.error("sessionId + msgBytes {}", sessionId + " " + Hex.toHexString(msgBytes));
         if (msgBytes.length > 1 && msgBytes[0] == 0 && msgBytes[1] == 0xF) {
-//            log.error("sessionId + msgBytes {}", sessionId + " " + Hex.toHexString(msgBytes));
             byte[] imeiB = new byte[msgBytes.length - 2];
             System.arraycopy(msgBytes, 2, imeiB, 0, imeiB.length);
             this.imeiHex = new String(imeiB);
 //            byte[] bb = {0x01};
 //            ctx.writeAndFlush(bb);
+//            int paramId = 100;
+//            byte [] sentData = {0x03};
+            int paramId = 1;
+//            byte [] sentData = {0x73, 0x65, 0x74, 0x64, 0x69, 0x67, 0x6f, 0x75, 0x74, 0x20, 0x31, 0x20, 0x36, 0x30};    // s  e  t  d  i  g  o  u  t     1     6 0
+            byte [] sentData = {0x67, 0x65, 0x74, 0x76, 0x65, 0x72};    // g   e t  v  e  r
+//            EventLoopGroup-4-3] ERROR o.t.i.c.s.TCPSimpleChannelInboundHandler - sessionId + msgBytes fcff7682-475e-407d-a705-5167f98d6b65 000f333539363333313030343538353930
+//            2020-03-17 19:40:13,339 [nioEventLoopGroup-4-3] ERROR o.t.i.c.s.TCPSimpleChannelInboundHandler - sessionId + msgBytes fcff7682-475e-407d-a705-5167f98d6b65 000000000000009f0c0106000000975665723a30332e32352e31345f3035204750533a41584e5f352e31305f333333332048773a464d42393230204d6f643a313320494d45493a33353936333331303034353835393020496e69743a313937302d312d3120303a3020557074696d653a38383832204d41433a303031453432424430364645205350433a312830292041584c3a31204f42443a3020424c3a312e372042543a34010000543b
+//            2020-03-17 19:40:13,340 [nioEventLoopGroup-4-3] ERROR o.t.i.c.s.TCPSimpleChannelInboundHandler - sessionId + payloadHe+ sent  fcff7682-475e-407d-a705-5167f98d6b65 000000000000009f0c0106000000975665723a30332e32352e31345f3035204750533a41584e5f352e31305f333333332048773a464d42393230204d6f643a313320494d45493a33353936333331303034353835393020496e69743a313937302d312d3120303a3020557074696d653a38383832204d41433a303031453432424430364645205350433a312830292041584c3a31204f42443a3020424c3a312e372042543a34010000543b 1
+//            2020-03-17 19:42:15,751 [nioEventLoopGroup-4-4] ERROR o.t.i.c.s.TCPSimpleChannelInboundHandler - sessionId + msgBytes a36a39e1-c1f8-44c9-974a-22f472ecfd21 000f333539363333313030343538353930
+//            2020-03-17 19:42:16,213 [nioEventLoopGroup-4-4] ERROR o.t.i.c.s.TCPSimpleChannelInboundHandler - sessionId + msgBytes a36a39e1-c1f8-44c9-974a-22f472ecfd21 000000000000009f0c0106000000975665723a30332e32352e31345f3035204750533a41584e5f352e31305f333333332048773a464d42393230204d6f643a313320494d45493a33353936333331303034353835393020496e69743a313937302d312d3120303a3020557074696d653a39303034204d41433a303031453432424430364645205350433a312830292041584c3a31204f42443a3020424c3a312e372042543a34010000035d
+//            2020-03-17 19:42:16,214 [nioEventLoopGroup-4-4] ERROR o.t.i.c.s.TCPSimpleChannelInboundHandler - sessionId + payloadHe+ sent  a36a39e1-c1f8-44c9-974a-22f472ecfd21 000000000000009f0c0106000000975665723a30332e32352e31345f3035204750533a41584e5f352e31305f333333332048773a464d42393230204d6f643a313320494d45493a33353936333331303034353835393020496e69743a313937302d312d3120303a3020557074696d653a39303034204d41433a303031453432424430364645205350433a312830292041584c3a31204f42443a3020424c3a312e372042543a34010000035d 1
+
+            int cmdType = 5;
+            int codec = 12;
+            SentMsg sentMsg = new SentMsg();
+            byte [] sentBB = sentMsg.getNewMsg(1,  codec, cmdType,  sentData,  paramId);
             ctx.writeAndFlush(sentBB);
+
         } else {
             int msgLen = msgBytes.length;
-            log.error("sessionId + msgBytes {}", sessionId + " " + Hex.toHexString(msgBytes) + " " + posLast + " " + msgLen);
+//            log.error("sessionId + msgBytes {}", sessionId + " " + Hex.toHexString(msgBytes) + " " + posLast + " " + msgLen);
             if (msgBytes.length > 4 && (msgBytes[0] == 0 && msgBytes[1] == 0 && msgBytes[2] == 0 && msgBytes[3] == 0) && !initData) {
                 initData = false;
                 byte[] msgBytesLen = new byte[4];
@@ -100,9 +113,11 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
 //                String bbStr = "0707070707";
 //                byte[] bb1 =  bbStr.getBytes();
                 bb[0]  = (byte )numberOfData1 ;
-                ctx.writeAndFlush(bb);
+                if (bb[0] > 1) {
+                    ctx.writeAndFlush(bb);
+                }
 //                ctx.writeAndFlush(bb1);
-                log.error("sessionId + payloadHex  {}", (sessionId + " "  + Hex.toHexString(dataAVL)));
+                log.error("sessionId + payloadHe+ sent  {}", (sessionId + " "  + Hex.toHexString(dataAVL)) + " " + bb[0]);
                 CustomResponse response = new CustomResponse();
                 byte[] payload = new byte[bytesCRC.length-1];
                 System.arraycopy(bytesCRC, 0, payload, 0, bytesCRC.length-1);

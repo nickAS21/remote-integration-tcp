@@ -18,15 +18,15 @@ public class SentMsg {
 //                         0x00, 0x00, (byte)0xB3, 0x3E};
             0x00, 0x00, (byte)0x40, 0x7B};
 
-    public byte [] getNewMsg (int paramCount,  int commandType, byte[] paramValue,  int paramId ) {
+    public byte [] getNewMsg (int paramCount,  int codec, int commandType, byte[] paramValue,  int paramId ) {
 //        int packetLength;   //     == 4 bytes  with data size ({from vyte[8] to byte [len - CRC])
-        int codec = 0x08;   //     == 1 bytes
+//        int codec = 0x08;   //     == 1 bytes
 //        int paramCount;    //      == 1 bytes 				(Количество параметров конфигурации)
 //        int commandType;    //     == 1  (request 05, response 06)
 //        int paramValueLength; //   == 4 bytes 	(Length of parameter value (BE byte order).
 //        int paramValue; //         == ParamValueLength bytes 		(Parameter value (UTF-8 encoded string)).
 //        int paramId ;       //     == 1 bytes 				(Configuration parameter id (BE byte order)).
-        int crc16IBM;       //     == 4 bytes
+//        int crc16IBM;       //     == 4 bytes
 
             // Packet
         int paramValueLength = paramValue.length;
