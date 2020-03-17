@@ -51,7 +51,7 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
         SentMsg sentMsg = new SentMsg();
         byte [] sentBB = sentMsg.getNewMsg(1,  5,  sentData,  paramId);
         if (msgBytes.length > 1 && msgBytes[0] == 0 && msgBytes[1] == 0xF) {
-            log.error("sessionId + msgBytes {}", sessionId + " " + Hex.toHexString(msgBytes));
+//            log.error("sessionId + msgBytes {}", sessionId + " " + Hex.toHexString(msgBytes));
             byte[] imeiB = new byte[msgBytes.length - 2];
             System.arraycopy(msgBytes, 2, imeiB, 0, imeiB.length);
             this.imeiHex = new String(imeiB);
