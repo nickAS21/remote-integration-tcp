@@ -18,6 +18,8 @@ package org.thingsboard.integration.custom.message;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 public class CustomIntegrationMsg {
@@ -25,5 +27,6 @@ public class CustomIntegrationMsg {
     private final String msg;
     private final CustomResponse response;
     private final String imev;
+    private final  List<String> commands;
 
 }

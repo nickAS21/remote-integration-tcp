@@ -119,7 +119,7 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
         Exception exception = null;
         try {
 //            log.error("process  {}", (customIntegrationMsg.getImev()));
-            response.setResult(doProcess(customIntegrationMsg.getMsg(), customIntegrationMsg.getImev()));
+            response.setResult(doProcess(customIntegrationMsg.getMsg(), customIntegrationMsg.getImev(), customIntegrationMsg.getCommands()));
             integrationStatistics.incMessagesProcessed();
         } catch (Exception e) {
             log.debug("Failed to apply data converter function: {}", e.getMessage(), e);
@@ -139,11 +139,19 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
         }
     }
 
-    private String doProcess(String msg, String imei) throws Exception {
+    private String doProcess(String msg, String imei, List <String> commands) throws Exception {
         byte[] data = mapper.writeValueAsBytes(msg);
         Map<String, String> metadataMap = new HashMap<>(metadataTemplate.getKvMap());
-//        metadataMap.put("imei", imeiHex);
         metadataMap.put("imei", imei);
+        metadataMap.put("commandQuantity", String.valueOf(commands.size()));
+        if (commands.size() >0) {
+            String key = "command";
+            for (int i =0; i < commands.size(); i++) {
+                String key_i = key + i;
+                metadataMap.put(key_i, commands.get(i));
+            }
+
+        }
         List<UplinkData> uplinkDataList = convertToUplinkDataList(context, data, new UplinkMetaData(getUplinkContentType(), metadataMap));
         if (uplinkDataList != null && !uplinkDataList.isEmpty()) {
             for (UplinkData uplinkData : uplinkDataList) {

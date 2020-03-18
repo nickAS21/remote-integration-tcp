@@ -3,52 +3,90 @@ package org.thingsboard.integration.custom.server;
 import org.thingsboard.integration.util.Crc16_IBM;
 
 import java.nio.ByteBuffer;
+import java.util.List;
+
+/**
+ *Preamble - the packet starts with four zero bytes.
+ * Data Size - size is calculated from Codec ID field to the second command or response quantity field.
+ * Codec ID - in Codec12 it is always 0x0C.
+ * Command/Response Quantity 1 - it is ignored when parsing the message.
+ * Type - it can be 0x05 to denote command or 0x06 to denote response.
+ * Command/Response Size – command or response length.
+ * Command/Response – command or response in HEX.
+ * Command/Response Quantity 2 - a byte which defines how many records (commands or responses) is in the packet. This byte will not be parsed but it’s recommended that it should contain same value as Command/Response Quantity 1.
+ * CRC-16 – calculated from Codec ID to the Command Quantity 2. CRC (Cyclic Redundancy Check) is an error-detecting code using for detect accidental changes to RAW data. For calculation we are using CRC-16/IBM.
+ */
+
+/**
+ *    General Codec12 message structure
+ *
+ * The following diagram shows basic structure of Codec12 messages.
+ *
+ * Command message structure:
+ * 0x00000000 (Preamble) 	Data Size 	Codec ID 	Command Quantity 1 	Type (0x05) 	Command Size 	Command 	Command Quantity 2 	CRC-16
+ *    4 bytes 	             4 bytes 	1 byte   	1 byte  	          1 byte 	     4 bytes 	   X bytes 	     1 byte          	4 bytes
+ *
+ *
+ * Response message structure:
+ * 0x00000000 (Preamble) 	Data Size 	Codec ID 	Response Quantity 1 	Type (0x06) 	Response Size 	Response 	Response Quantity 2 	CRC-16
+ * 4 bytes                	4 bytes 	1 byte   	1 byte  	              1 byte  	    4 bytes       	X bytes    	1 byte              	4 bytes
+ */
 
 public class SentMsg {
 
-    byte[] bbSent = {0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x16,
-//                         0x0C,
-            0x08,
-            0x01,
-            0x05,
-            0x00, 0x00, 0x00, 0x0E,
-            0x73, 0x65, 0x74, 0x64, 0x69, 0x67, 0x6f, 0x75, 0x74, 0x20, 0x31, 0x20, 0x36, 0x30,
-            0x01,
-//                         0x00, 0x00, (byte)0xB3, 0x3E};
-            0x00, 0x00, (byte)0x40, 0x7B};
+    String [] getCommandList = {"getinfo",
+                                "getver",
+                                "getstatus",
+                                 "getgps",
+                                 "getio",
+                                 "ggps",
+                                 "readio",
+                                 "cpureset",
+                                 "getparam",
+                                 "setparam",
+                                 "",
+                                 "",
+                                 "",
+                                 "",
+                                 "",
+                                 "",
+                                ""}  ;
 
-    public byte [] getNewMsg (int paramCount,  int codec, int commandType, byte[] paramValue,  int paramId ) {
+    public byte [] getCommandMsg(List<String> commands ) {
 //        int packetLength;   //     == 4 bytes  with data size ({from vyte[8] to byte [len - CRC])
-//        int codec = 0x08;   //     == 1 bytes
+        int codecId = 0x0C;   //     == 1 bytes
 //        int paramCount;    //      == 1 bytes 				(Количество параметров конфигурации)
-//        int commandType;    //     == 1  (request 05, response 06)
+        int commandType = 0x05;    //     == 1  (request 05, response 06)
 //        int paramValueLength; //   == 4 bytes 	(Length of parameter value (BE byte order).
 //        int paramValue; //         == ParamValueLength bytes 		(Parameter value (UTF-8 encoded string)).
 //        int paramId ;       //     == 1 bytes 				(Configuration parameter id (BE byte order)).
 //        int crc16IBM;       //     == 4 bytes
 
             // Packet
-        int paramValueLength = paramValue.length;
-        int packetLength =  3 + 4*paramCount + paramValueLength + 1*paramCount;
+        int quantity = commands.size();
+        int commandSizes = commands.stream().mapToInt(String::length).sum();
+        int packetLength =  3 + 4*quantity + commandSizes + 1;
         int pos = 0;
         int len = 1;
         byte [] bytesPacket = new byte [packetLength];
-        bytesPacket [pos] = (byte)codec;
+        bytesPacket [pos] = (byte)codecId;
         pos += len;
-        bytesPacket [pos] = (byte)paramCount;
+        bytesPacket [pos] = (byte)quantity;
         pos += len;
         bytesPacket [pos] = (byte)commandType;
         pos += len;
-        len = 4;
-        byte[] bytesParamValueLength = ByteBuffer.allocate(4).putInt(paramValueLength).array();
-        System.arraycopy(bytesParamValueLength, 0, bytesPacket, pos, len);
-        pos += len;
-        len = paramValue.length;
-        System.arraycopy(paramValue, 0, bytesPacket, pos, len);
-        pos += len;
+        for (String command : commands) {
+            len = 4;
+            byte[] bytesParamValueLength = ByteBuffer.allocate(4).putInt(command.length()).array();
+            System.arraycopy(bytesParamValueLength, 0, bytesPacket, pos, len);
+            pos += len;
+            len = command.length();
+            byte [] commandB = command.getBytes();  // 67 65 74 69 6E 66 6F
+            System.arraycopy(commandB, 0, bytesPacket, pos, len);
+            pos += len;
+        }
         len = 1;
-        bytesPacket [pos] = (byte)paramId;
+        bytesPacket [pos] = (byte)quantity;
             // CRC
         Crc16_IBM crc16_IBM = new Crc16_IBM( 0xA001, false);
         int crc_16_val= crc16_IBM.calculate ( bytesPacket, 0);
