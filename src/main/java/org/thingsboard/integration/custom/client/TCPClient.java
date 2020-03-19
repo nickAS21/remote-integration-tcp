@@ -60,13 +60,25 @@ public class TCPClient {
                 }
             });
             clientChannel = bootstrap.connect("localhost", port).sync().channel();
+            startGenerator();
 //            byte [] client_imevB = client_imev.getBytes();
-            clientChannel.writeAndFlush(generateImevByte());
+//            int cnrMsg = 5;
+//            while (cnrMsg > 0) {
+////            while (true) {
+//                clientChannel.writeAndFlush(generateImevByte());
+//                Thread.sleep(5000); // останавливаем основной поток программы на 10000 миллисекунд (10 секунд)
+//                cnrMsg --;
+//            }
+//            log.error("client_imev {}, finish cnrMsg {} ", client_imev, cnrMsg);
         } catch (Exception e) {
             log.error("Failed to init TCP client!", e);
             throw new RuntimeException();
         }
     }
+
+//    public void sentMsgImev () {
+//        clientChannel.writeAndFlush(generateImevByte());
+//    }
 
     private byte[] generateImevByte() {
         byte imev[] = new byte[17];
@@ -77,18 +89,18 @@ public class TCPClient {
         return imev;
     }
 
-//    private void startGenerator() {
-//        this.scheduledExecutorService.scheduleAtFixedRate(() ->
-////                clientChannel.writeAndFlush(generateData()), 0, this.msgGenerationIntervalMs, TimeUnit.MILLISECONDS);
-//                clientChannel.writeAndFlush(generateImevByte()), 0, this.msgGenerationIntervalMs, TimeUnit.MILLISECONDS);
-//    }
+    private void startGenerator() {
+        this.scheduledExecutorService.scheduleAtFixedRate(() ->
+//                clientChannel.writeAndFlush(generateData()), 0, this.msgGenerationIntervalMs, TimeUnit.MILLISECONDS);
+                clientChannel.writeAndFlush(generateImevByte()), 0, this.msgGenerationIntervalMs, TimeUnit.MILLISECONDS);
+    }
 
-//    private String generateData() {
-//        int firstV = generateValue(10, 40);
-//        int secondV = generateValue(0, 100);
-//        int thirdV = generateValue(0, 100);
-//        return firstV + "," + secondV + "," + thirdV;
-//    }
+    private String generateData() {
+        int firstV = generateValue(10, 40);
+        int secondV = generateValue(0, 100);
+        int thirdV = generateValue(0, 100);
+        return firstV + "," + secondV + "," + thirdV;
+    }
 
 //    private byte [] generateImevByte() {
 //        byte imev [] = new byte [17];
@@ -96,12 +108,12 @@ public class TCPClient {
 //        return new byte[]{0x00, 0x0F};
 //    }
 
-//    private int generateValue(int min, int max) {
-//        if (min >= max) {
-//            throw new IllegalArgumentException("Max value must be greater than min value!");
-//        }
-//        return random.nextInt((max - min) + 1) + min;
-//    }
+    private int generateValue(int min, int max) {
+        if (min >= max) {
+            throw new IllegalArgumentException("Max value must be greater than min value!");
+        }
+        return random.nextInt((max - min) + 1) + min;
+    }
 
     public void destroy() {
         if (this.scheduledExecutorService != null) {

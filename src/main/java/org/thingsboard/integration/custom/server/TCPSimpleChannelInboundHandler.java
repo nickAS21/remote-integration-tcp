@@ -8,16 +8,15 @@ import org.thingsboard.integration.custom.message.CustomIntegrationMsg;
 import org.thingsboard.integration.custom.message.CustomResponse;
 import org.thingsboard.integration.util.CRC16;
 import org.thingsboard.integration.util.Crc16_IBM;
-
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
 public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<Object> {
     private final UUID sessionId;
     private String imeiHex;
-    private  List<String> commands;
+    private List<String> commands;
     private boolean initData = false;
     private int dataLength = 0;
     private int posLast = 0;
@@ -33,24 +32,26 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
         byte[] msgBytes = (byte[]) msg;
         TCPIntegration chTCPIntegration = this.TCPIntegration;
-        log.error("sessionId + msgBytes {}:{}", sessionId, Hex.toHexString(msgBytes));
+//        log.error("sessionId + msgBytes {}:{}", sessionId, Hex.toHexString(msgBytes));
         if (msgBytes.length > 1 && msgBytes[0] == 0 && msgBytes[1] == 0xF) {
             byte[] imeiB = new byte[msgBytes.length - 2];
             System.arraycopy(msgBytes, 2, imeiB, 0, imeiB.length);
             this.imeiHex = new String(imeiB);
-//            byte[] bb = {0x01};
-//            ctx.writeAndFlush(bb);
+            if (chTCPIntegration.sentRequest.size() > 0 && chTCPIntegration.sentRequest.containsKey(this.imeiHex)) {
 //            log.error("sessionId + sentBytes {}:{}", sessionId, Hex.toHexString(bb));
-            SentMsg sentMsg = new SentMsg();
-            this.commands = new ArrayList<String>();
-            String setCommand = sentMsg.getCommandList[4];
+                Set sentMsgs = chTCPIntegration.sentRequest.get(this.imeiHex);
+                SentMsg sentMsg = new SentMsg();
+                sentMsgs.forEach(command ->  ctx.writeAndFlush(sentMsg.getCommandMsgOne((String) command)));
+
+//                this.commands = new ArrayList<String>();
+//                String setCommand = sentMsg.getCommandList[4];
 //            String setCommand = sentMsg.getCommandList[8] + " 133";
 //            String setCommand = sentMsg.getCommandList[9] + " 133:1";
-            log.error("setCommand {} : {}", sessionId, setCommand);
-            commands.add(setCommand);
-            byte [] sentBB = sentMsg.getCommandMsg(commands);
-            ctx.writeAndFlush(sentBB);
-            log.error("sessionId + sentBytes {}:{}", sessionId, Hex.toHexString(sentBB));
+//            log.error("setCommand {} : {}", sessionId, setCommand);
+//                commands.add(setCommand);
+//                byte[] sentBB = sentMsg.getCommandMsg(commands);
+//                ctx.writeAndFlush(sentBB);
+//            log.error("sessionId + sentBytes {}:{}", sessionId, Hex.toHexString(sentBB));
 
 //            this.commands = new ArrayList<String>();
 //            setCommand = sentMsg.getCommandList[9] + " 102:4";
@@ -59,6 +60,10 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
 //            sentBB = sentMsg.getCommandMsg(commands);
 //            ctx.writeAndFlush(sentBB);
 //            log.error("sessionId + sentBytes {}:{}", sessionId, Hex.toHexString(sentBB));
+            } else {
+                byte[] bb = {0x01};
+                ctx.writeAndFlush(bb);
+            }
         } else {
             int msgLen = msgBytes.length;
             if (msgBytes.length > 4 && (msgBytes[0] == 0 && msgBytes[1] == 0 && msgBytes[2] == 0 && msgBytes[3] == 0) && !initData) {
@@ -94,38 +99,25 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
             System.arraycopy(dataAVL, 8, bytesCRC, 0, dataLength);
             CRC16 crc16 = new CRC16();
             int crc_16_val = crc16.getValue(bytesCRC);
-            Crc16_IBM crc16_IBM = new Crc16_IBM( 0xA001, false);
-            int crc_16_val_IBM= crc16_IBM.calculate (bytesCRC, 0);
+            Crc16_IBM crc16_IBM = new Crc16_IBM(0xA001, false);
+            int crc_16_val_IBM = crc16_IBM.calculate(bytesCRC, 0);
 //            if (numberOfData1 == numberOfData2 && crc_16 == crc_16_val) {
             if (numberOfData1 == numberOfData2 && crc_16 == crc_16_val_IBM) {
-                if (bytesCRC[0]== 8) {
+                if (bytesCRC[0] == 8) {
                     byte[] bb = new byte[1];
                     bb[0] = (byte) numberOfData1;
                     ctx.writeAndFlush(bb);
                 }
-                log.error("sessionId + payloadHe+ sent  {} : {}", sessionId, Hex.toHexString(dataAVL));
+//                log.error("sessionId + payloadHe+ sent  {} : {}", sessionId, Hex.toHexString(dataAVL));
                 CustomResponse response = new CustomResponse();
-                byte[] payload = new byte[bytesCRC.length-1];
-                System.arraycopy(bytesCRC, 0, payload, 0, bytesCRC.length-1);
+                byte[] payload = new byte[bytesCRC.length - 1];
+                System.arraycopy(bytesCRC, 0, payload, 0, bytesCRC.length - 1);
                 chTCPIntegration.process(new CustomIntegrationMsg(Hex.toHexString(payload), response, this.imeiHex, this.commands));
-//                log.error("chTCPIntegration.process  {}", this.imeiHex);
             }
             dataLength = 0;
             initData = false;
         }
-        // test
-//        String test = "Hello to ThingsBoard! My name is [Device B]";
-//        String testIn = new String(msgBytes);
-//        if (test.equals(testIn)) {
-//            String testOut = "Hello from ThingsBoard!";
-//            log.error("testIn  {}", testIn);
-//            byte[] bytesCRC = testOut.getBytes();
-//            byte[] bbOut = testOut.getBytes();
-//            ctx.writeAndFlush(bbOut);
-//            imeiHex = "Device B";
-//            CustomResponse response = new CustomResponse();
-//            chTCPIntegration.process(new CustomIntegrationMsg(Hex.toHexString(bytesCRC), response));
-//        }
+
 
     }
 
