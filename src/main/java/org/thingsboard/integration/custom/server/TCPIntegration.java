@@ -54,15 +54,8 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
     private TCPClient client1;
     private TCPClient client2;
     public Map<String, Map<String, byte[]>> sentRequestByte;
-
-//    private String deviceName;
-//
-//    private boolean initData = false;
-//    private int dataLength = 0;
-//    private int posLast = 0;
-//    byte[] dataAVL;
-//    String imeiHex;
-
+    private String codecId22 = "16";
+    private String codecId22Status = "Requests sent, pending session status";
 
     @Override
     public void init(TbIntegrationInitParams params) throws Exception {
@@ -128,7 +121,6 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
         String status = "OK";
         Exception exception = null;
         try {
-//            log.error("process  {}", (customIntegrationMsg.getImev()));
             response.setResult(doProcessUplink(customIntegrationMsg.getMsg(), customIntegrationMsg.getImev(), customIntegrationMsg.getCommandCur()));
             integrationStatistics.incMessagesProcessed();
         } catch (Exception e) {
@@ -155,9 +147,8 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
         metadataMap.put("imei", imei);
         metadataMap.put("commandQuantity", "1");
         if (commandCur != null && !commandCur.isEmpty()) {
-            String key = "command" + 0;
-            metadataMap.put(key, commandCur);
-        }
+            metadataMap.put("request", commandCur);
+        } else metadataMap.put("request", "1");
         List<UplinkData> uplinkDataList = convertToUplinkDataList(context, data, new UplinkMetaData(getUplinkContentType(), metadataMap));
         if (uplinkDataList != null && !uplinkDataList.isEmpty()) {
             for (UplinkData uplinkData : uplinkDataList) {
@@ -186,45 +177,17 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
         return port;
     }
 
-//    private long getMsgGeneratorIntervalMs(JsonNode configuration) {
-//        long msgIntervalMs;
-//        if (configuration.has("msgGenerationIntervalMs")) {
-//            msgIntervalMs = configuration.get("msgGenerationIntervalMs").asLong();
-//        } else {
-//            log.warn("Failed to find [msgGenerationIntervalMs] field in integration config, default value [{}] is used!", msgGenerationIntervalMs);
-//            msgIntervalMs = msgGenerationIntervalMs;
-//        }
-//        return msgIntervalMs;
-//    }
-
     @Override
     public void onDownlinkMsg(IntegrationDownlinkMsg msg) {
-//        try {
-            TbMsg msgTb = msg.getTbMsg();
-            logDownlink(context, msgTb.getType(), msgTb);
-            if (downlinkConverter != null) {
-                processDownLinkMsg(context, msgTb);
-
-
-            }
-
-
-//            String sentMsg =  mapper.readTree(msg.getTbMsg().getData()).get("payload").asText();
-//            String imei =  mapper.readTree(msg.getTbMsg().getMetaData().getData().get("cs_serialNumber")).asText();
-//            HashSet commands = (sentRequest.containsKey(imei)) ? sentRequest.get(imei) : new HashSet();
-//            commands.add(sentMsg);
-//            sentRequest.put(imei, commands);
-//            log.error ("sentRequest {}", sentRequest);
-//        }
-//        catch (IOException e) {
-//            e.printStackTrace();
-//        }
+        TbMsg msgTb = msg.getTbMsg();
+        logDownlink(context, msgTb.getType(), msgTb);
+        if (downlinkConverter != null) {
+            processDownLinkMsg(context, msgTb);
+        }
     }
 
     private void processDownLinkMsg(IntegrationContext context, TbMsg msg) {
         Map<String, String> mdMap = new HashMap<>(metadataTemplate.getKvMap());
-//        String status;
-//        Exception exception;
         try {
             List<DownlinkData> result = downlinkConverter.convertDownLink(
                     context.getDownlinkConverterContext(),
@@ -241,28 +204,12 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
                         throw new RuntimeException("SerialNumber is missing in the downlink metadata!");
                     }
                     String dataStr = new String(downlink.getData(), StandardCharsets.UTF_8);
-//                    String dataStr = new String(downlink.getData(), StandardCharsets.UTF_8);
-//                    int codecId = Integer.parseInt(metadata.get("codec"));
-//                    int quantity = Integer.parseInt(metadata.get("quantity"));
-//                    int commandType = Integer.parseInt(metadata.get("commandType"));
                     if (dataStr != null && !dataStr.isEmpty()) {
                         SentMsg sentMsg = new SentMsg();
-//                        String [] dataArrays = dataStr.split(",");
-                        List <byte[]> dataBytes = new ArrayList<>();
+                        List<byte[]> dataBytes = new ArrayList<>();
                         List<String> datalists = Stream.of(dataStr.split(",")).collect(Collectors.toList());
-
-                        datalists.forEach(datalist-> dataBytes.add(sentMsg.getCommandMsgByteOne(datalist)));
-//                        byte[] sentB = sentMsg.getCommandMsgByteOne(dataStr);
-//                    byte [] sentB = sentMsg.getCommandMsgByteOne(dataStr, codecId, quantity, commandType);
-//                    byte [] sentBTest = sentMsg.getCommandMsgOne(metadata.get("payload"));
-//
-//                    log.error("sentB     {}",  Hex.toHexString(sentB));
-//                    log.error("sentBTest {}",  Hex.toHexString(sentBTest));
-//                        String sentValue = metadata.get("payload");
+                        datalists.forEach(datalist -> dataBytes.add(sentMsg.getCommandMsgByteOne(datalist)));
                         List<String> sentValues = Stream.of(metadata.get("payload").split(",")).collect(Collectors.toList());
-//                        if (sentValue.indexOf(":") > 0) {
-//                            sentValue = metadata.get("payload").substring(0, metadata.get("payload").indexOf(":"));
-//                        }
                         String serialNumber = metadata.get("serialNumber");
                         Map<String, byte[]> sentMsgValue;
                         if (sentRequestByte.containsKey(serialNumber) && sentRequestByte.get(serialNumber).size() > 0) {
@@ -270,11 +217,11 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
                         } else {
                             sentMsgValue = new HashMap<>();
                         }
-                        for (int i =0; i < datalists.size(); i ++ ) {
+                        for (int i = 0; i < datalists.size(); i++) {
                             sentMsgValue.put(sentValues.get(i), dataBytes.get(i));
                         }
-
                         sentRequestByte.put(serialNumber, sentMsgValue);
+                        sentUplinkPendingRequests(metadata.get("payload"), metadata.get("serialNumber"));
                     }
                 }
             }
@@ -282,6 +229,11 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
             log.error("Failed to process downLink message", e);
             reportDownlinkError(context, msg, "ERROR", e);
         }
+    }
+
+    private void sentUplinkPendingRequests(String payload, String imeiHex) {
+        CustomResponse response = new CustomResponse();
+        this.process(new CustomIntegrationMsg(this.codecId22 + payload, response, imeiHex, codecId22Status));
     }
 
 

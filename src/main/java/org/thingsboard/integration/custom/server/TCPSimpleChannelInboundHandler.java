@@ -31,10 +31,8 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
-//        ReferenceCountUtil.retain(msg);
         byte[] msgBytes = (byte[]) msg;
         TCPIntegration chTCPIntegration = this.TCPIntegration;
-//        log.error("start sessionId + msgBytes {}:{}", sessionId, Hex.toHexString(msgBytes));
         if (msgBytes.length > 1 && msgBytes[0] == 0 && msgBytes[1] == 0xF) {
             byte[] imeiB = new byte[msgBytes.length - 2];
             System.arraycopy(msgBytes, 2, imeiB, 0, imeiB.length);
@@ -42,17 +40,6 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
             if (chTCPIntegration.sentRequestByte.size() > 0 && chTCPIntegration.sentRequestByte.containsKey(this.imeiHex) && chTCPIntegration.sentRequestByte.get(this.imeiHex).size() > 0) {
                 sentMsgToDivice (ctx, chTCPIntegration, msg);
             } else {
-//                SentMsg sentMsg = new SentMsg();
-//                List<String> commands = new ArrayList<>();
-//                commands.add(sentMsg.getCommandList[0]);
-//                commands.add(sentMsg.getCommandList[1]);
-//                byte[] bb = sentMsg.getCommandMsg(commands );
-//                commandCur = sentMsg.getCommandList[0] + ", " + sentMsg.getCommandList[1];
-
-//                commandCur = "000F8c0002008A000130006A000131";
-//                byte[] bb = sentMsg.hexStringToByteArray(commandCur);
-//                        log.error("sent {} : {}", commandCur,  Hex.toHexString(bb));
-
                 byte[] bb = {0x01};
                 ReferenceCountUtil.retain(msg);
                 ctx.writeAndFlush(bb);
@@ -100,16 +87,13 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
                     bb[0] = (byte) numberOfData1;
                     ctx.writeAndFlush(bb);
                 }
-//                log.error("sessionId + payloadHe+ sent  {} : {}", sessionId, Hex.toHexString(dataAVL));
                 CustomResponse response = new CustomResponse();
                 byte[] payload = new byte[bytesCRC.length - 1];
                 System.arraycopy(bytesCRC, 0, payload, 0, bytesCRC.length - 1);
                 chTCPIntegration.process(new CustomIntegrationMsg(Hex.toHexString(payload), response, this.imeiHex, this.commandCur));
-                log.error("process commandCur {} : {}", commandCur, Hex.toHexString(payload));
                 if (chTCPIntegration.sentRequestByte.size() > 0 && chTCPIntegration.sentRequestByte.containsKey(this.imeiHex) && chTCPIntegration.sentRequestByte.get(this.imeiHex).size() > 0) {
                     Map<String, byte[]> commands = chTCPIntegration.sentRequestByte.get(this.imeiHex);
                     commands.remove(this.commandCur);
-
                     chTCPIntegration.sentRequestByte.put(this.imeiHex, commands);
                     if (chTCPIntegration.sentRequestByte.get(this.imeiHex).size() > 0) {
                         sentMsgToDivice(ctx, chTCPIntegration, msg);
@@ -125,14 +109,8 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
         Map<String, byte []> commands = chTCPIntegration.sentRequestByte.get(this.imeiHex);
         commandCur = (String)commands.keySet().toArray()[0];
         byte [] commandSend = commands.get(commandCur);
-//        List<String> commandss = new ArrayList<>();
-//        commandss.add(commandCur);
-//        SentMsg sentMsg = new SentMsg();
-//        byte [] commandSend = sentMsg.getCommandMsg(commandss );
-//        log.error("sent {} : {}", commandCur,  Hex.toHexString(commandSend));
         ReferenceCountUtil.retain(msg);
         ctx.writeAndFlush(commandSend);
     }
-
 
 }
