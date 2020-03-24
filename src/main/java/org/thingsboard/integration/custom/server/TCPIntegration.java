@@ -17,7 +17,6 @@ package org.thingsboard.integration.custom.server;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.TextNode;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -27,22 +26,20 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.bytes.ByteArrayDecoder;
 import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.util.encoders.Hex;
 import org.thingsboard.integration.api.AbstractIntegration;
 import org.thingsboard.integration.api.IntegrationContext;
 import org.thingsboard.integration.api.TbIntegrationInitParams;
-import org.thingsboard.integration.api.data.DownlinkData;
-import org.thingsboard.integration.api.data.IntegrationDownlinkMsg;
-import org.thingsboard.integration.api.data.UplinkData;
-import org.thingsboard.integration.api.data.UplinkMetaData;
+import org.thingsboard.integration.api.data.*;
 import org.thingsboard.integration.custom.client.TCPClient;
 import org.thingsboard.integration.custom.message.CustomIntegrationMsg;
 import org.thingsboard.integration.custom.message.CustomResponse;
+import org.thingsboard.server.common.msg.TbMsg;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
@@ -56,7 +53,7 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
     private Channel serverChannel;
     private TCPClient client1;
     private TCPClient client2;
-    public Map<String, HashSet<String>> sentRequest;
+    public Map<String, Map<String, byte[]>> sentRequestByte;
 
 //    private String deviceName;
 //
@@ -70,7 +67,7 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
     @Override
     public void init(TbIntegrationInitParams params) throws Exception {
         super.init(params);
-        sentRequest = new HashMap<>();
+        sentRequestByte = new HashMap<>();
         JsonNode configuration = mapper.readTree(params.getConfiguration().getConfiguration().get("configuration").asText());
         try {
             bossGroup = new NioEventLoopGroup();
@@ -84,16 +81,18 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
                 protected void initChannel(SocketChannel socketChannel) throws Exception {
                     socketChannel.pipeline().addLast("encoder", new ByteArrayEncoder());
                     socketChannel.pipeline().addLast("decoder", new ByteArrayDecoder());
+//                    socketChannel.pipeline().addLast("decoder", new ByteArrayEncoder());
+//                    socketChannel.pipeline().addLast("encoder", new ByteArrayDecoder());
                     socketChannel.pipeline().addLast(new TCPSimpleChannelInboundHandler(tcpIntegration));
                 }
             });
             int port = getBindPort(configuration);
             serverChannel = bootstrap.bind(port).sync().channel();
             // for the test
-            String client_imev1 = "359633100458591";
-            String client_imev2 = "359633100458592";
-            client1 = new TCPClient(port, getMsgGeneratorIntervalMs(configuration), client_imev1);
-            client2 = new TCPClient(port, getMsgGeneratorIntervalMs(configuration), client_imev2);
+//            String client_imev1 = "359633100458591";
+//            String client_imev2 = "359633100458592";
+//            client1 = new TCPClient(port, getMsgGeneratorIntervalMs(configuration), client_imev1);
+//            client2 = new TCPClient(port, getMsgGeneratorIntervalMs(configuration), client_imev2);
 
         } catch (Exception e) {
             log.error("Failed to init TCP server!", e);
@@ -130,7 +129,7 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
         Exception exception = null;
         try {
 //            log.error("process  {}", (customIntegrationMsg.getImev()));
-            response.setResult(doProcessUplink(customIntegrationMsg.getMsg(), customIntegrationMsg.getImev(), customIntegrationMsg.getCommands()));
+            response.setResult(doProcessUplink(customIntegrationMsg.getMsg(), customIntegrationMsg.getImev(), customIntegrationMsg.getCommandCur()));
             integrationStatistics.incMessagesProcessed();
         } catch (Exception e) {
             log.debug("Failed to apply data converter function: {}", e.getMessage(), e);
@@ -150,18 +149,14 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
         }
     }
 
-    private String doProcessUplink(String msg, String imei, List<String> commands) throws Exception {
+    private String doProcessUplink(String msg, String imei, String commandCur) throws Exception {
         byte[] data = mapper.writeValueAsBytes(msg);
         Map<String, String> metadataMap = new HashMap<>(metadataTemplate.getKvMap());
         metadataMap.put("imei", imei);
-        metadataMap.put("commandQuantity", String.valueOf(commands.size()));
-        if (commands.size() > 0) {
-            String key = "command";
-            for (int i = 0; i < commands.size(); i++) {
-                String key_i = key + i;
-                metadataMap.put(key_i, commands.get(i));
-            }
-
+        metadataMap.put("commandQuantity", "1");
+        if (commandCur != null && !commandCur.isEmpty()) {
+            String key = "command" + 0;
+            metadataMap.put(key, commandCur);
         }
         List<UplinkData> uplinkDataList = convertToUplinkDataList(context, data, new UplinkMetaData(getUplinkContentType(), metadataMap));
         if (uplinkDataList != null && !uplinkDataList.isEmpty()) {
@@ -191,36 +186,101 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
         return port;
     }
 
-    private long getMsgGeneratorIntervalMs(JsonNode configuration) {
-        long msgIntervalMs;
-        if (configuration.has("msgGenerationIntervalMs")) {
-            msgIntervalMs = configuration.get("msgGenerationIntervalMs").asLong();
-        } else {
-            log.warn("Failed to find [msgGenerationIntervalMs] field in integration config, default value [{}] is used!", msgGenerationIntervalMs);
-            msgIntervalMs = msgGenerationIntervalMs;
-        }
-        return msgIntervalMs;
-    }
-
-
-    /**
-     * 2020-03-19 16:08:14,231 [grpc-default-executor-1] ERROR o.t.i.custom.server.TCPIntegration -  --------------------------- Downlink message: DefaultIntegrationDownlinkMsg(tenantId=a5e10260-5e21-11ea-9e70-8b648d7f643d, integrationId=null, tbMsg=TbMsg(id=12d17790-69eb-11ea-a26b-3fd0b6941ed2, type=ATTRIBUTES_UPDATED, originator=dfd89f60-6221-11ea-8ca0-011cd5ae8bc0, metaData=TbMsgMetaData(data={originatorName=FMB920_359633100458592, scope=SERVER_SCOPE, userName=tenant@thingsboard.org, userId=af8b5fe0-5e21-11ea-9e70-8b648d7f643d, originatorType=teltonik}), dataType=JSON, data={"payload":"ver25"}, transactionData=TbMsgTransactionData(transactionId=12d17790-69eb-11ea-a26b-3fd0b6941ed2, originatorId=dfd89f60-6221-11ea-8ca0-011cd5ae8bc0), ruleChainId=a63def70-5e21-11ea-9e70-8b648d7f643d, ruleNodeId=null, clusterPartition=0))
-     *
-     * @param msg
-     */
+//    private long getMsgGeneratorIntervalMs(JsonNode configuration) {
+//        long msgIntervalMs;
+//        if (configuration.has("msgGenerationIntervalMs")) {
+//            msgIntervalMs = configuration.get("msgGenerationIntervalMs").asLong();
+//        } else {
+//            log.warn("Failed to find [msgGenerationIntervalMs] field in integration config, default value [{}] is used!", msgGenerationIntervalMs);
+//            msgIntervalMs = msgGenerationIntervalMs;
+//        }
+//        return msgIntervalMs;
+//    }
 
     @Override
     public void onDownlinkMsg(IntegrationDownlinkMsg msg) {
-        log.error(" --------------------------- Downlink message: {}", msg);
+//        try {
+            TbMsg msgTb = msg.getTbMsg();
+            logDownlink(context, msgTb.getType(), msgTb);
+            if (downlinkConverter != null) {
+                processDownLinkMsg(context, msgTb);
+
+
+            }
+
+
+//            String sentMsg =  mapper.readTree(msg.getTbMsg().getData()).get("payload").asText();
+//            String imei =  mapper.readTree(msg.getTbMsg().getMetaData().getData().get("cs_serialNumber")).asText();
+//            HashSet commands = (sentRequest.containsKey(imei)) ? sentRequest.get(imei) : new HashSet();
+//            commands.add(sentMsg);
+//            sentRequest.put(imei, commands);
+//            log.error ("sentRequest {}", sentRequest);
+//        }
+//        catch (IOException e) {
+//            e.printStackTrace();
+//        }
+    }
+
+    private void processDownLinkMsg(IntegrationContext context, TbMsg msg) {
+        Map<String, String> mdMap = new HashMap<>(metadataTemplate.getKvMap());
+//        String status;
+//        Exception exception;
         try {
-            String sentMsg =  mapper.readTree(msg.getTbMsg().getData()).get("payload").asText();
-            String imei =  mapper.readTree(msg.getTbMsg().getMetaData().getData().get("cs_serialNumber")).asText();
-            HashSet commands = (sentRequest.containsKey(imei)) ? sentRequest.get(imei) : new HashSet();
-            commands.add(sentMsg);
-            sentRequest.put(imei, commands);
-            log.error ("sentRequest {}", sentRequest);
-        } catch (IOException e) {
-            e.printStackTrace();
+            List<DownlinkData> result = downlinkConverter.convertDownLink(
+                    context.getDownlinkConverterContext(),
+                    Collections.singletonList(msg),
+                    new IntegrationMetaData(mdMap));
+
+            if (!result.isEmpty()) {
+                for (DownlinkData downlink : result) {
+                    if (downlink.isEmpty()) {
+                        continue;
+                    }
+                    Map<String, String> metadata = downlink.getMetadata();
+                    if (!metadata.containsKey("serialNumber")) {
+                        throw new RuntimeException("SerialNumber is missing in the downlink metadata!");
+                    }
+                    String dataStr = new String(downlink.getData(), StandardCharsets.UTF_8);
+//                    String dataStr = new String(downlink.getData(), StandardCharsets.UTF_8);
+//                    int codecId = Integer.parseInt(metadata.get("codec"));
+//                    int quantity = Integer.parseInt(metadata.get("quantity"));
+//                    int commandType = Integer.parseInt(metadata.get("commandType"));
+                    if (dataStr != null && !dataStr.isEmpty()) {
+                        SentMsg sentMsg = new SentMsg();
+//                        String [] dataArrays = dataStr.split(",");
+                        List <byte[]> dataBytes = new ArrayList<>();
+                        List<String> datalists = Stream.of(dataStr.split(",")).collect(Collectors.toList());
+
+                        datalists.forEach(datalist-> dataBytes.add(sentMsg.getCommandMsgByteOne(datalist)));
+//                        byte[] sentB = sentMsg.getCommandMsgByteOne(dataStr);
+//                    byte [] sentB = sentMsg.getCommandMsgByteOne(dataStr, codecId, quantity, commandType);
+//                    byte [] sentBTest = sentMsg.getCommandMsgOne(metadata.get("payload"));
+//
+//                    log.error("sentB     {}",  Hex.toHexString(sentB));
+//                    log.error("sentBTest {}",  Hex.toHexString(sentBTest));
+//                        String sentValue = metadata.get("payload");
+                        List<String> sentValues = Stream.of(metadata.get("payload").split(",")).collect(Collectors.toList());
+//                        if (sentValue.indexOf(":") > 0) {
+//                            sentValue = metadata.get("payload").substring(0, metadata.get("payload").indexOf(":"));
+//                        }
+                        String serialNumber = metadata.get("serialNumber");
+                        Map<String, byte[]> sentMsgValue;
+                        if (sentRequestByte.containsKey(serialNumber) && sentRequestByte.get(serialNumber).size() > 0) {
+                            sentMsgValue = sentRequestByte.get(serialNumber);
+                        } else {
+                            sentMsgValue = new HashMap<>();
+                        }
+                        for (int i =0; i < datalists.size(); i ++ ) {
+                            sentMsgValue.put(sentValues.get(i), dataBytes.get(i));
+                        }
+
+                        sentRequestByte.put(serialNumber, sentMsgValue);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to process downLink message", e);
+            reportDownlinkError(context, msg, "ERROR", e);
         }
     }
 
