@@ -55,6 +55,19 @@
                   "_hash": 0.7661275217596377
                 },
                 {
+                  "name": "angle",
+                  "type": "timeseries",
+                  "label": "angle",
+                  "color": "#ffc107",
+                  "settings": {
+                    "useCellStyleFunction": false,
+                    "cellStyleFunction": "",
+                    "useCellContentFunction": false,
+                    "cellContentFunction": ""
+                  },
+                  "_hash": 0.06373438992852654
+                },
+                {
                   "name": "Speed km/h",
                   "type": "timeseries",
                   "label": "Speed km/h",
@@ -65,20 +78,20 @@
                     "useCellContentFunction": false,
                     "cellContentFunction": ""
                   },
-                  "_hash": 0.1142649053718614
+                  "_hash": 0.42125721507602476
                 },
                 {
                   "name": "satellites",
                   "type": "timeseries",
                   "label": "satellites",
-                  "color": "#607d8b",
+                  "color": "#9c27b0",
                   "settings": {
                     "useCellStyleFunction": false,
                     "cellStyleFunction": "",
                     "useCellContentFunction": false,
                     "cellContentFunction": ""
                   },
-                  "_hash": 0.5883516284761694
+                  "_hash": 0.794226132721152
                 }
               ],
               "entityAliasId": "b12006c0-7ed3-8b50-b30c-925b29829f92"
@@ -87,7 +100,7 @@
           "timewindow": {
             "realtime": {
               "interval": 1000,
-              "timewindowMs": 18000000
+              "timewindowMs": 604800000
             },
             "aggregation": {
               "type": "NONE",
@@ -410,6 +423,20 @@
                   "name": "Battery Voltage mV",
                   "type": "timeseries",
                   "label": "Battery Voltage mV",
+                  "color": "#f44336",
+                  "settings": {
+                    "columnWidth": "0px",
+                    "useCellStyleFunction": false,
+                    "cellStyleFunction": "",
+                    "useCellContentFunction": false,
+                    "cellContentFunction": ""
+                  },
+                  "_hash": 0.13663938039169454
+                },
+                {
+                  "name": "External Voltage mV",
+                  "type": "timeseries",
+                  "label": "External Voltage mV",
                   "color": "#ffc107",
                   "settings": {
                     "columnWidth": "0px",
@@ -418,35 +445,7 @@
                     "useCellContentFunction": false,
                     "cellContentFunction": ""
                   },
-                  "_hash": 0.16404032906384836
-                },
-                {
-                  "name": "External Voltage mV",
-                  "type": "timeseries",
-                  "label": "External Voltage mV",
-                  "color": "#607d8b",
-                  "settings": {
-                    "columnWidth": "0px",
-                    "useCellStyleFunction": false,
-                    "cellStyleFunction": "",
-                    "useCellContentFunction": false,
-                    "cellContentFunction": ""
-                  },
-                  "_hash": 0.8267322137351838
-                },
-                {
-                  "name": "ggps",
-                  "type": "timeseries",
-                  "label": "ggps",
-                  "color": "#9c27b0",
-                  "settings": {
-                    "columnWidth": "0px",
-                    "useCellStyleFunction": false,
-                    "cellStyleFunction": "",
-                    "useCellContentFunction": false,
-                    "cellContentFunction": ""
-                  },
-                  "_hash": 0.03444647162395209
+                  "_hash": 0.03401260447054555
                 }
               ],
               "entityAliasId": "b12006c0-7ed3-8b50-b30c-925b29829f92"
@@ -460,7 +459,15 @@
           "widgetStyle": {},
           "displayTimewindow": true,
           "actions": {},
-          "enableDataExport": true
+          "enableDataExport": true,
+          "legendConfig": {
+            "direction": "column",
+            "position": "bottom",
+            "showMin": false,
+            "showMax": false,
+            "showAvg": false,
+            "showTotal": false
+          }
         },
         "id": "3b408d73-4683-0f13-8a97-47012b7fb368"
       },
@@ -548,7 +555,9 @@
             "polygonStrokeOpacity": 1,
             "polygonStrokeWeight": 1,
             "pointTooltipOnRightPanel": true,
-            "autocloseTooltip": true
+            "autocloseTooltip": true,
+            "showPolygon": false,
+            "usePolygonTooltipFunction": true
           },
           "title": "Device Migration Map",
           "dropShadow": true,
@@ -672,7 +681,7 @@
               "timewindowMs": 86400000
             },
             "aggregation": {
-              "type": "AVG",
+              "type": "NONE",
               "limit": 25000
             }
           },
@@ -802,7 +811,7 @@
     },
     "states": {
       "details": {
-        "name": "TELTONIKA_TCP",
+        "name": "Setup -> ${entityName}",
         "root": false,
         "layouts": {
           "main": {
@@ -869,7 +878,7 @@
         }
       },
       "uplinks": {
-        "name": "UPLINKS",
+        "name": "UPLINKS -> ${entityName}",
         "root": false,
         "layouts": {
           "main": {
@@ -972,28 +981,20 @@
       }
     },
     "timewindow": {
-      "displayValue": "",
-      "selectedTab": 0,
-      "hideInterval": false,
-      "hideAggregation": false,
-      "hideAggInterval": false,
-      "realtime": {
-        "interval": 1000,
-        "timewindowMs": 60000
-      },
       "history": {
-        "historyType": 0,
-        "interval": 1000,
-        "timewindowMs": 60000,
+        "interval": 300000,
         "fixedTimewindow": {
-          "startTimeMs": 1584529186528,
-          "endTimeMs": 1584615586528
+          "startTimeMs": 1585134755776,
+          "endTimeMs": 1585221155776
         }
       },
       "aggregation": {
-        "type": "AVG",
-        "limit": 25000
-      }
+        "type": "NONE",
+        "limit": 50000
+      },
+      "hideInterval": false,
+      "hideAggregation": false,
+      "hideAggInterval": false
     },
     "settings": {
       "stateControllerId": "entity",

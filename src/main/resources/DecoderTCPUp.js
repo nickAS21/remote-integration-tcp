@@ -434,7 +434,8 @@ function Decoder(payload, metadata) {
 
     function getTelemetry08() {
         var telemetry = [];
-        var numberData1 = parseInt(payoadStr.substr(y, lenByte), 16);
+        // var numberData1 = parseInt(payoadStr.substr(y, lenByte), 16);
+        var numberData1 = 1;
         y += lenByte;
         for (var i = 0; i < numberData1; i++) {
             var len = 16;
