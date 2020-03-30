@@ -48,7 +48,13 @@ public class SentMsg {
             "setparam 133:0",
             "setparam 102:2",
             "readio 21",
-            "readio 66"};
+            "readio 66",
+            "getparam 2004",    // Server settings domen: solk.org.ua;  office.thingsboard.io
+            "setparam 2004:office.thingsboard.io",
+            "setparam 2004:solk.org.ua",
+            "getparam 2005",    //  Server settings port: 1994
+            "getparam 2006"     //  Server settings pototokol: TCP - 0, UDP - 1
+    };
 
     String testStr = "getinfo,getver,getstatus,getgps,getio,ggps,getparam 133,getparam 102,setparam 133:0,setparam 102:2,readio 21,readio 66";
 
