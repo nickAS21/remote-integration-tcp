@@ -151,6 +151,7 @@
                             <exclude>**/LICENSE</exclude>
                             <exclude>**/*.properties</exclude>
                             <exclude>**/banner.txt</exclude>
+                            <exclude>**/data_*.txt</exclude>
                             <exclude>src/test/resources/**</exclude>
                             <exclude>src/sh/**</exclude>
                             <exclude>src/main/scripts/control/**</exclude>

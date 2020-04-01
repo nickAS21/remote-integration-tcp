@@ -1,3 +1,18 @@
+/**
+ * Copyright © 2020-2019 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.thingsboard.integration.custom.server;
 
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +47,10 @@ import java.util.List;
  * Response message structure:
  * 0x00000000 (Preamble) 	Data Size 	Codec ID 	Response Quantity 1 	Type (0x06) 	Response Size 	Response 	Response Quantity 2 	CRC-16
  * 4 bytes                	4 bytes 	1 byte   	1 byte  	              1 byte  	    4 bytes       	X bytes    	1 byte              	4 bytes
+ *
+ * Saving/Sending without time synchronization (ID=107)
+ * When this feature is enabled (value = 1), then records can be saved and sent to server
+ * without time synchronization.
  */
 @Slf4j
 public class SentMsg {
@@ -49,7 +68,7 @@ public class SentMsg {
             "setparam 102:2",
             "readio 21",
             "readio 66",
-            "getparam 2004",    // Server settings domen: solk.org.ua;  office.thingsboard.io
+            "getparam 2004",    // Server settings domen: solk.org.ua;  office.thingsboard.io or ifconfig.co
             "setparam 2004:office.thingsboard.io",
             "setparam 2004:solk.org.ua",
             "getparam 2005",    //  Server settings port: 1994
