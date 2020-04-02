@@ -17,14 +17,17 @@ package org.thingsboard.integration;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 
 @SpringBootApplication
 @EnableAsync
 @ComponentScan({"org.thingsboard"})
+@EnableCaching
 public class ThingsboardRemoteIntegrationApplication {
 
     private static final String SPRING_CONFIG_NAME_KEY = "--spring.config.name";

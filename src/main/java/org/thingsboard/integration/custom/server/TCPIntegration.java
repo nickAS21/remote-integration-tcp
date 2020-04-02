@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,7 +26,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.bytes.ByteArrayDecoder;
 import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.util.encoders.Hex;
 import org.thingsboard.integration.api.AbstractIntegration;
 import org.thingsboard.integration.api.IntegrationContext;
 import org.thingsboard.integration.api.TbIntegrationInitParams;
@@ -44,8 +43,8 @@ import java.util.stream.Stream;
 @Slf4j
 public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
 
+    private static final int bindPort = 1990;
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final int bindPort = 1994;
     private static final long msgGenerationIntervalMs = 60000;
 
     private NioEventLoopGroup bossGroup;
@@ -74,14 +73,12 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
                 protected void initChannel(SocketChannel socketChannel) throws Exception {
                     socketChannel.pipeline().addLast("encoder", new ByteArrayEncoder());
                     socketChannel.pipeline().addLast("decoder", new ByteArrayDecoder());
-//                    socketChannel.pipeline().addLast("decoder", new ByteArrayEncoder());
-//                    socketChannel.pipeline().addLast("encoder", new ByteArrayDecoder());
                     socketChannel.pipeline().addLast(new TCPSimpleChannelInboundHandler(tcpIntegration));
                 }
             });
-            int port = getBindPort(configuration);
+            int port = getBindPo1rt(configuration);
             serverChannel = bootstrap.bind(port).sync().channel();
-            // for the test
+            // for the test with  client
 //            String client_imev1 = "359633100458591";
 //            String client_imev2 = "359633100458592";
 //            client1 = new TCPClient(port, getMsgGeneratorIntervalMs(configuration), client_imev1);
@@ -166,15 +163,17 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
         return "No Content";
     }
 
-    private int getBindPort(JsonNode configuration) {
+    private int getBindPo1rt(JsonNode configuration) {
         int port;
-        if (configuration.has("port")) {
-            port = configuration.get("port").asInt();
+        if (configuration.has("bindPort")) {
+            port = configuration.get("bindPort").asInt();
         } else {
-            log.warn("Failed to find [port] field in integration config, default value [{}] is used!", bindPort);
-            port = bindPort;
+            log.warn("Failed to find [port] field in integration config, default value [{}] is used!", this.bindPort);
+            port = this.bindPort;
+
         }
         return port;
+
     }
 
     @Override
@@ -235,6 +234,4 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
         CustomResponse response = new CustomResponse();
         this.process(new CustomIntegrationMsg(this.codecId22 + payload, response, imeiHex, codecId22Status));
     }
-
-
 }

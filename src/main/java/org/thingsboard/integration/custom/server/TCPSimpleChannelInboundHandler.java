@@ -1,3 +1,18 @@
+/**
+ * Copyright © 2020-2019 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.thingsboard.integration.custom.server;
 
 
@@ -8,7 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.encoders.Hex;
 import org.thingsboard.integration.custom.message.CustomIntegrationMsg;
 import org.thingsboard.integration.custom.message.CustomResponse;
-import org.thingsboard.integration.util.CRC16;
 import org.thingsboard.integration.util.Crc16_IBM;
 
 import java.util.*;
@@ -78,8 +92,7 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
             int crc_16 = Integer.parseInt(Hex.toHexString(msgBytesLen), 16);
             byte[] bytesCRC = new byte[dataLength];
             System.arraycopy(dataAVL, 8, bytesCRC, 0, dataLength);
-            CRC16 crc16 = new CRC16();
-            Crc16_IBM crc16_IBM = new Crc16_IBM(0xA001, false);
+             Crc16_IBM crc16_IBM = new Crc16_IBM(0xA001, false);
             int crc_16_val_IBM = crc16_IBM.calculate(bytesCRC, 0);
             if (numberOfData1 == numberOfData2 && crc_16 == crc_16_val_IBM) {
                 if (bytesCRC[0] == 8) {

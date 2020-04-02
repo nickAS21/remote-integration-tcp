@@ -55,143 +55,26 @@ import java.util.List;
 @Slf4j
 public class SentMsg {
 
-    String[] getCommandList = {"getinfo",
+    String[] getCommandListExample = {
+            "getinfo",
             "getver",
             "getstatus",
             "getgps",
             "getio",
             "ggps",
-//                                 "cpureset",
+            "cpureset",
             "getparam 133",
             "getparam 102",
             "setparam 133:0",
             "setparam 102:2",
             "readio 21",
             "readio 66",
-            "getparam 2004",    // Server settings domen: solk.org.ua;  office.thingsboard.io or ifconfig.co
-            "setparam 2004:office.thingsboard.io",
-            "setparam 2004:solk.org.ua",
-            "getparam 2005",    //  Server settings port: 1994
-            "getparam 2006"     //  Server settings pototokol: TCP - 0, UDP - 1
+            "getparam 2004",                        // Server settings domen: my.org.ua;  his.thingsboard.io or ifconfig.co
+            "setparam 2004:his.thingsboard.io",
+            "setparam 2004:my.org.ua",
+            "getparam 2005",                        //  Server settings port: 1994
+            "getparam 2006"                         //  Server settings pototokol: TCP - 0, UDP - 1
     };
-
-    String testStr = "getinfo,getver,getstatus,getgps,getio,ggps,getparam 133,getparam 102,setparam 133:0,setparam 102:2,readio 21,readio 66";
-
-    public byte[] getCommandMsg(List<String> commands) {
-//        int packetLength;   //     == 4 bytes  with data size ({from vyte[8] to byte [len - CRC])
-        int codecId = 0x0C;   //     == 1 bytes
-//        int paramCount;    //      == 1 bytes 				(Количество параметров конфигурации)
-        int commandType = 0x05;    //     == 1  (request 05, response 06)
-//        int paramValueLength; //   == 4 bytes 	(Length of parameter value (BE byte order).
-//        int paramValue; //         == ParamValueLength bytes 		(Parameter value (UTF-8 encoded string)).
-//        int paramId ;       //     == 1 bytes 				(Configuration parameter id (BE byte order)).
-//        int crc16IBM;       //     == 4 bytes
-
-        // Packet
-        int quantity = commands.size();
-        int commandSizes = commands.stream().mapToInt(String::length).sum();
-        int packetLength = 2 + 1 + 4 * quantity + commandSizes + 1;
-        int pos = 0;
-        int len = 1;
-        byte[] bytesPacket = new byte[packetLength];
-        bytesPacket[pos] = (byte) codecId;
-        pos += len;
-        bytesPacket[pos] = (byte) quantity;
-        pos += len;
-        len = 1;
-        bytesPacket[pos] = (byte) commandType;
-        pos += len;
-        for (String command : commands) {
-
-            len = 4;
-            byte[] bytesParamValueLength = ByteBuffer.allocate(4).putInt(command.length()).array();
-            System.arraycopy(bytesParamValueLength, 0, bytesPacket, pos, len);
-            pos += len;
-            len = command.length();
-            byte[] commandB = command.getBytes();  // 67 65 74 69 6E 66 6F
-            System.arraycopy(commandB, 0, bytesPacket, pos, len);
-            pos += len;
-        }
-        len = 1;
-        bytesPacket[pos] = (byte) quantity;
-        // CRC
-        Crc16_IBM crc16_IBM = new Crc16_IBM(0xA001, false);
-        int crc_16_val = crc16_IBM.calculate(bytesPacket, 0);
-        byte[] bytesCrc_16_val = ByteBuffer.allocate(4).putInt(crc_16_val).array();
-        // All
-
-        int lenSentBB = 4 + 4 + packetLength + 4;
-        byte[] bytes = new byte[lenSentBB];
-        pos = 4;
-        len = 4;
-        byte[] bytesPacketLength = ByteBuffer.allocate(4).putInt(packetLength).array();
-        System.arraycopy(bytesPacketLength, 0, bytes, pos, len);
-        pos += len;
-        len = bytesPacket.length;
-        System.arraycopy(bytesPacket, 0, bytes, pos, len);
-        pos += len;
-        len = 4;
-        System.arraycopy(bytesCrc_16_val, 0, bytes, pos, len);
-        return bytes;
-    }
-
-    public byte[] getCommandMsgOne(String command) {
-//        int packetLength;   //     == 4 bytes  with data size ({from vyte[8] to byte [len - CRC])
-        int codecId = 0x0C;   //     == 1 bytes
-//        int paramCount;    //      == 1 bytes 				(Количество параметров конфигурации)
-        int commandType = 0x05;    //     == 1  (request 05, response 06)
-//        int paramValueLength; //   == 4 bytes 	(Length of parameter value (BE byte order).
-//        int paramValue; //         == ParamValueLength bytes 		(Parameter value (UTF-8 encoded string)).
-//        int paramId ;       //     == 1 bytes 				(Configuration parameter id (BE byte order)).
-//        int crc16IBM;       //     == 4 bytes
-        // Packet
-//        log.error("command {}", command);
-        int quantity = 1;
-        int commandSizes = command.length();
-        int packetLength = 3 + 4 * quantity + commandSizes + 1;
-        int pos = 0;
-        int len = 1;
-        byte[] bytesPacket = new byte[packetLength];
-        bytesPacket[pos] = (byte) codecId;
-        pos += len;
-        bytesPacket[pos] = (byte) quantity;
-        pos += len;
-        bytesPacket[pos] = (byte) commandType;
-        pos += len;
-        len = 4;
-        byte[] bytesParamValueLength = ByteBuffer.allocate(4).putInt(command.length()).array();
-        System.arraycopy(bytesParamValueLength, 0, bytesPacket, pos, len);
-        pos += len;
-        len = command.length();
-        byte[] commandB = command.getBytes();  // 67 65 74 69 6E 66 6F
-        System.arraycopy(commandB, 0, bytesPacket, pos, len);
-        pos += len;
-
-        len = 1;
-        bytesPacket[pos] = (byte) quantity;
-        // CRC
-        log.error("sentB_Old     {}", Hex.toHexString(bytesPacket));
-
-        Crc16_IBM crc16_IBM = new Crc16_IBM(0xA001, false);
-        int crc_16_val = crc16_IBM.calculate(bytesPacket, 0);
-        byte[] bytesCrc_16_val = ByteBuffer.allocate(4).putInt(crc_16_val).array();
-        // All
-
-        int lenSentBB = 4 + 4 + packetLength + 4;
-        byte[] bytes = new byte[lenSentBB];
-        pos = 4;
-        len = 4;
-        byte[] bytesPacketLength = ByteBuffer.allocate(4).putInt(packetLength).array();
-        System.arraycopy(bytesPacketLength, 0, bytes, pos, len);
-        pos += len;
-        len = bytesPacket.length;
-        System.arraycopy(bytesPacket, 0, bytes, pos, len);
-        pos += len;
-        len = 4;
-        System.arraycopy(bytesCrc_16_val, 0, bytes, pos, len);
-        return bytes;
-    }
-
 
     /**
      *

@@ -61,24 +61,11 @@ public class TCPClient {
             });
             clientChannel = bootstrap.connect("localhost", port).sync().channel();
             startGenerator();
-//            byte [] client_imevB = client_imev.getBytes();
-//            int cnrMsg = 5;
-//            while (cnrMsg > 0) {
-////            while (true) {
-//                clientChannel.writeAndFlush(generateImevByte());
-//                Thread.sleep(5000); // останавливаем основной поток программы на 10000 миллисекунд (10 секунд)
-//                cnrMsg --;
-//            }
-//            log.error("client_imev {}, finish cnrMsg {} ", client_imev, cnrMsg);
         } catch (Exception e) {
             log.error("Failed to init TCP client!", e);
             throw new RuntimeException();
         }
     }
-
-//    public void sentMsgImev () {
-//        clientChannel.writeAndFlush(generateImevByte());
-//    }
 
     private byte[] generateImevByte() {
         byte imev[] = new byte[17];
@@ -91,7 +78,6 @@ public class TCPClient {
 
     private void startGenerator() {
         this.scheduledExecutorService.scheduleAtFixedRate(() ->
-//                clientChannel.writeAndFlush(generateData()), 0, this.msgGenerationIntervalMs, TimeUnit.MILLISECONDS);
                 clientChannel.writeAndFlush(generateImevByte()), 0, this.msgGenerationIntervalMs, TimeUnit.MILLISECONDS);
     }
 
@@ -101,12 +87,6 @@ public class TCPClient {
         int thirdV = generateValue(0, 100);
         return firstV + "," + secondV + "," + thirdV;
     }
-
-//    private byte [] generateImevByte() {
-//        byte imev [] = new byte [17];
-//
-//        return new byte[]{0x00, 0x0F};
-//    }
 
     private int generateValue(int min, int max) {
         if (min >= max) {
@@ -127,5 +107,4 @@ public class TCPClient {
             this.workGroup.shutdownGracefully();
         }
     }
-
 }

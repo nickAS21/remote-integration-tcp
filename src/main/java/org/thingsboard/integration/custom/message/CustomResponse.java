@@ -19,7 +19,5 @@ import lombok.Data;
 
 @Data
 public class CustomResponse {
-
     private String result;
-
 }
