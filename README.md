@@ -32,20 +32,22 @@ ThingsBoard documentation is hosted on [thingsboard.io](https://thingsboard.io/d
 
 Collect and Visualize your IoT data in minutes by following this [guide](https://thingsboard.io/docs/user-guide/integrations/teltonika/).
 
-After install
+1. #### After install
+    
+    [tb-remote-integration-tcp.deb](/target/tb-remote-integration-tcp.deb)
+    
+    <i><b>Note !!!</b></i> <p>
+    Warn: The version of the ThingsBoard should be written in the pom.xml file:
 
-[tb-remote-integration-tcp.deb](/target/tb-remote-integration-tcp.deb)
+        <thingsboard.version>2.4.3PE</thingsboard.version>
 
-<i><b>Note !!!</b></i> <p>
-Warn: The version of the ThingsBoard should be written in the pom.xml file:
+2. #### start thimgsboard_pe
+3. #### sudo service tb-remote-integration-tcp start
 
-    <thingsboard.version>2.4.3PE</thingsboard.version>
 
-- start thimgsboard_pe
-- sudo service tb-remote-integration-tcp start
 
 To test the passage of requests and responses, as well as to check the connection from the device to the dashboard using <b>"tb-remote-integration-tcp"</b> service:
-- you can use the following example
+- ##### you can use the following example
 
             "getinfo",
             "getver",
