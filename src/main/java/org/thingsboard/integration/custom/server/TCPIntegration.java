@@ -76,7 +76,7 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
                     socketChannel.pipeline().addLast(new TCPSimpleChannelInboundHandler(tcpIntegration));
                 }
             });
-            int port = getBindPo1rt(configuration);
+            int port = getBindPort(configuration);
             serverChannel = bootstrap.bind(port).sync().channel();
             // for the test with  client
 //            String client_imev1 = "359633100458591";
@@ -163,7 +163,7 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
         return "No Content";
     }
 
-    private int getBindPo1rt(JsonNode configuration) {
+    private int getBindPort(JsonNode configuration) {
         int port;
         if (configuration.has("bindPort")) {
             port = configuration.get("bindPort").asInt();

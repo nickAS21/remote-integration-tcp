@@ -36,6 +36,11 @@ After install
 
 [tb-remote-integration-tcp.deb](/target/tb-remote-integration-tcp.deb)
 
+<i><b>Note !!!</b></i> <p>
+Warn: The version of the ThingsBoard should be written in the pom.xml file:
+
+    <thingsboard.version>2.4.3PE</thingsboard.version>
+
 - start thimgsboard_pe
 - sudo service tb-remote-integration-tcp start
 
@@ -55,11 +60,12 @@ To test the passage of requests and responses, as well as to check the connectio
             "setparam 102:2",
             "readio 21",
             "readio 66",
-            "getparam 2004",                        // Server settings domen: my.org.ua;  his.thingsboard.io or ifconfig.co
-            "setparam 2004:his.thingsboard.io",
-            "setparam 2004:my.org.ua",
-            "getparam 2005",                        //  Server settings port: 1994
-            "getparam 2006"                         //  Server settings pototokol: TCP - 0, UDP - 1
+            "getparam 2004",                        // Server settings domen (example: "my.org.ua";  "his.thingsboard.io" or "IP address" from ifconfig.co
+            "setparam 2004:his.thingsboard.io",     // Server settings domen new Value: "his.thingsboard.io" 
+            "setparam 2004:my.org.ua",              // Server settings domen new Value: "my.org.ua" 
+            "setparam 2004:192.168.1.79",           // Server settings domen new Value: "192.168.1.79" 
+            "getparam 2005",                        // Server settings bindPort new Value: 1994
+            "getparam 2006"                         // Server settings pototokol: TCP - 0, UDP - 1
 
 ## Support
 
