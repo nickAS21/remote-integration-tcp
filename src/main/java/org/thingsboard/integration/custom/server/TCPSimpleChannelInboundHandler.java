@@ -37,6 +37,7 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
     private int posLast = 0;
     private byte[] dataAVL;
     private TCPIntegration TCPIntegration;
+    private String typeDevice;
 
     TCPSimpleChannelInboundHandler(TCPIntegration TCPIntegration) {
         this.sessionId = UUID.randomUUID();
@@ -51,6 +52,7 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
             byte[] imeiB = new byte[msgBytes.length - 2];
             System.arraycopy(msgBytes, 2, imeiB, 0, imeiB.length);
             this.imeiHex = new String(imeiB);
+            this.typeDevice = chTCPIntegration.getTypeDevice();
             if (chTCPIntegration.sentRequestByte.size() > 0 && chTCPIntegration.sentRequestByte.containsKey(this.imeiHex) && chTCPIntegration.sentRequestByte.get(this.imeiHex).size() > 0) {
                 sentMsgToDivice (ctx, chTCPIntegration, msg);
             } else {

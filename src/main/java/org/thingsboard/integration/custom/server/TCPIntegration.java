@@ -33,8 +33,10 @@ import org.thingsboard.integration.api.data.*;
 import org.thingsboard.integration.custom.client.TCPClient;
 import org.thingsboard.integration.custom.message.CustomIntegrationMsg;
 import org.thingsboard.integration.custom.message.CustomResponse;
+import org.thingsboard.server.common.data.integration.Integration;
 import org.thingsboard.server.common.msg.TbMsg;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -60,7 +62,8 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
     public void init(TbIntegrationInitParams params) throws Exception {
         super.init(params);
         sentRequestByte = new HashMap<>();
-        JsonNode configuration = mapper.readTree(params.getConfiguration().getConfiguration().get("configuration").asText());
+        Integration inter = this.configuration;
+//        JsonNode configuration = mapper.readTree(params.getConfiguration().getConfiguration().get("configuration").asText());
         try {
             bossGroup = new NioEventLoopGroup();
             workGroup = new NioEventLoopGroup();
@@ -76,7 +79,7 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
                     socketChannel.pipeline().addLast(new TCPSimpleChannelInboundHandler(tcpIntegration));
                 }
             });
-            int port = getBindPort(configuration);
+            int port = getBindPort();
             serverChannel = bootstrap.bind(port).sync().channel();
             // for the test with  client
 //            String client_imev1 = "359633100458591";
@@ -163,17 +166,36 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
         return "No Content";
     }
 
-    private int getBindPort(JsonNode configuration) {
-        int port;
-        if (configuration.has("bindPort")) {
-            port = configuration.get("bindPort").asInt();
-        } else {
-            log.warn("Failed to find [port] field in integration config, default value [{}] is used!", this.bindPort);
-            port = this.bindPort;
+    private int getBindPort() {
+        int port = 0;
+        try {
+            JsonNode configuration = mapper.readTree(this.configuration.getConfiguration().get("configuration").asText());
+            if (configuration.has("bindPort")) {
+                port = configuration.get("bindPort").asInt();
+            } else {
+                log.warn("Failed to find [port] field in integration config, default value [{}] is used!", this.bindPort);
+                port = this.bindPort;
 
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         return port;
+    }
 
+    public String getTypeDevice() {
+        String typeDevice = null;
+        try {
+            JsonNode configuration = mapper.readTree(this.configuration.getConfiguration().get("configuration").asText());
+            if (configuration.has("typeDevice")) {
+                typeDevice = configuration.get("typeDevice").asText();
+            } else {
+                log.warn("Failed to find [typeDevice] field in integration config, default value [{}] is used!", typeDevice);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return typeDevice;
     }
 
     @Override
