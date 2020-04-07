@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,22 +21,21 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.encoders.Hex;
-import org.thingsboard.integration.custom.message.CustomIntegrationMsg;
-import org.thingsboard.integration.custom.message.CustomResponse;
-import org.thingsboard.integration.util.Crc16_IBM;
+import org.thingsboard.integration.custom.message.*;
 
 import java.util.*;
 
 @Slf4j
 public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<Object> {
     private final UUID sessionId;
-    private String imeiHex;
+    private String serialNumber;
     private String commandCur;
     private boolean initData = false;
-    private int dataLength = 0;
+    private int dataPacketLength = 0;
     private int posLast = 0;
-    private byte[] dataAVL;
+    private byte[] msgAllBytes;
     private TCPIntegration TCPIntegration;
+    private String typeDevice;
 
     TCPSimpleChannelInboundHandler(TCPIntegration TCPIntegration) {
         this.sessionId = UUID.randomUUID();
@@ -46,82 +45,90 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
         byte[] msgBytes = (byte[]) msg;
-        TCPIntegration chTCPIntegration = this.TCPIntegration;
-        if (msgBytes.length > 1 && msgBytes[0] == 0 && msgBytes[1] == 0xF) {
-            byte[] imeiB = new byte[msgBytes.length - 2];
-            System.arraycopy(msgBytes, 2, imeiB, 0, imeiB.length);
-            this.imeiHex = new String(imeiB);
-            if (chTCPIntegration.sentRequestByte.size() > 0 && chTCPIntegration.sentRequestByte.containsKey(this.imeiHex) && chTCPIntegration.sentRequestByte.get(this.imeiHex).size() > 0) {
-                sentMsgToDivice (ctx, chTCPIntegration, msg);
-            } else {
-                byte[] bb = {0x01};
-                ReferenceCountUtil.retain(msg);
-                ctx.writeAndFlush(bb);
-                commandCur = null;
-            }
-        } else {
-            int msgLen = msgBytes.length;
-            if (msgBytes.length > 4 && (msgBytes[0] == 0 && msgBytes[1] == 0 && msgBytes[2] == 0 && msgBytes[3] == 0) && !initData) {
-                initData = false;
-                byte[] msgBytesLen = new byte[4];
-                System.arraycopy(msgBytes, 4, msgBytesLen, 0, 4);
-                dataLength = Integer.parseInt(Hex.toHexString(msgBytesLen), 16);
-                dataAVL = new byte[dataLength + 12];
-                System.arraycopy(msgBytes, 0, dataAVL, posLast, msgLen);
+        int msgLen = msgBytes.length;
+        if (msgLen > 1) {
+//            System.out.println("input1: " + Hex.toHexString(msgBytes));
+            TCPIntegration chTCPIntegration = this.TCPIntegration;
+            this.typeDevice = chTCPIntegration.getTypeDevice();
+            /**
+             * Start read msg from buffer
+             */
+            if (!initData) {
+                RequestMsg requestMsg = RequestMsgFabrica.getRequestMsg(this.typeDevice);
+                requestMsg.startConnect(msgBytes);
+                this.msgAllBytes = requestMsg.getMsgAllBytes();
+                this.initData = requestMsg.getInitData();
+                this.dataPacketLength = requestMsg.getDataPacketLength();
+                System.arraycopy(msgBytes, 0, msgAllBytes, posLast, msgLen);
                 posLast += msgLen;
-                if (dataLength > posLast) {
+                if (msgAllBytes.length > posLast) {
                     initData = true;
                 } else {
                     posLast = 0;
                     initData = false;
                 }
-            } else if (initData) {
-                System.arraycopy(msgBytes, 0, dataAVL, posLast, msgLen);
+            }
+            /**
+             * read msg from buffer next packet
+             */
+            else {
+                System.arraycopy(msgBytes, 0, msgAllBytes, posLast, msgLen);
                 posLast += msgLen;
-                if (dataLength <= posLast) {
+                if (msgAllBytes.length <= posLast) {
                     posLast = 0;
                     initData = false;
                 }
             }
-        }
-        if (!initData && dataAVL != null && dataAVL.length > 0) {
-            int numberOfData1 = dataAVL[9];
-            int numberOfData2 = dataAVL[dataAVL.length - 5];
-            byte[] msgBytesLen = new byte[4];
-            System.arraycopy(dataAVL, dataAVL.length - 4, msgBytesLen, 0, 4);
-            int crc_16 = Integer.parseInt(Hex.toHexString(msgBytesLen), 16);
-            byte[] bytesCRC = new byte[dataLength];
-            System.arraycopy(dataAVL, 8, bytesCRC, 0, dataLength);
-             Crc16_IBM crc16_IBM = new Crc16_IBM(0xA001, false);
-            int crc_16_val_IBM = crc16_IBM.calculate(bytesCRC, 0);
-            if (numberOfData1 == numberOfData2 && crc_16 == crc_16_val_IBM) {
-                if (bytesCRC[0] == 8) {
-                    byte[] bb = new byte[1];
-                    bb[0] = (byte) numberOfData1;
-                    ctx.writeAndFlush(bb);
+
+            /**
+             * analysis msgAllBytes and sent data to UpLink
+             */
+            if (!initData && msgAllBytes != null && msgAllBytes.length > 0) {
+                RequestMsg requestMsg = RequestMsgFabrica.getRequestMsg(this.typeDevice);
+                boolean rez = requestMsg.analysisMsg(this.msgAllBytes,  this.serialNumber, chTCPIntegration, this.dataPacketLength);
+                if (rez) {
+                    this.serialNumber = requestMsg.getSerialNumber();
+                    /**
+                     * sent response ti device
+                     */
+                    byte[] commandSend = requestMsg.getCommandSend();
+                    if (commandSend != null && commandSend.length > 0) {
+                        sentMsgToDivice(ctx, requestMsg.getCommandSend(), msg);
+                    }
+                    /**
+                     * sent data to UpLink
+                     */
+                    byte[] payload = requestMsg.getPayload();
+                    if (payload != null && payload.length > 0) {
+                        CustomResponse response = new CustomResponse();
+                        chTCPIntegration.process(new CustomIntegrationMsg(Hex.toHexString(payload), response, this.serialNumber, this.commandCur));
+                    }
                 }
-                CustomResponse response = new CustomResponse();
-                byte[] payload = new byte[bytesCRC.length - 1];
-                System.arraycopy(bytesCRC, 0, payload, 0, bytesCRC.length - 1);
-                chTCPIntegration.process(new CustomIntegrationMsg(Hex.toHexString(payload), response, this.imeiHex, this.commandCur));
-                if (chTCPIntegration.sentRequestByte.size() > 0 && chTCPIntegration.sentRequestByte.containsKey(this.imeiHex) && chTCPIntegration.sentRequestByte.get(this.imeiHex).size() > 0) {
-                    Map<String, byte[]> commands = chTCPIntegration.sentRequestByte.get(this.imeiHex);
-                    commands.remove(this.commandCur);
-                    chTCPIntegration.sentRequestByte.put(this.imeiHex, commands);
-                    if (chTCPIntegration.sentRequestByte.get(this.imeiHex).size() > 0) {
-                        sentMsgToDivice(ctx, chTCPIntegration, msg);
+
+                /**
+                 * After Start session if there are requests in the queue for this device from DownLink
+                 *  Example: getinfo, getver, getstatus, getgps, getio, ggps, getparam 2004, getparam 2005, readio 21, readio 66
+                 */
+                if (chTCPIntegration.sentRequestByte.size() > 0 && chTCPIntegration.sentRequestByte.containsKey(this.serialNumber) && chTCPIntegration.sentRequestByte.get(this.serialNumber).size() > 0) {
+                    Map<String, byte[]> commands = chTCPIntegration.sentRequestByte.get(this.serialNumber);
+                    chTCPIntegration.sentRequestByte.put(this.serialNumber, commands);
+                    if (chTCPIntegration.sentRequestByte.get(this.serialNumber).size() > 0) {
+                        sentMsgToDiviceFromUpLink(ctx, chTCPIntegration, msg);
+                        commands.remove(this.commandCur);
                     }
                 }
             }
-            dataLength = 0;
-            initData = false;
         }
     }
 
-    private  void sentMsgToDivice (ChannelHandlerContext ctx, TCPIntegration chTCPIntegration, Object msg) {
-        Map<String, byte []> commands = chTCPIntegration.sentRequestByte.get(this.imeiHex);
-        commandCur = (String)commands.keySet().toArray()[0];
-        byte [] commandSend = commands.get(commandCur);
+    private void sentMsgToDiviceFromUpLink(ChannelHandlerContext ctx, TCPIntegration chTCPIntegration, Object msg) {
+        Map<String, byte[]> commands = chTCPIntegration.sentRequestByte.get(this.serialNumber);
+        commandCur = (String) commands.keySet().toArray()[0];
+        byte[] commandSend = commands.get(commandCur);
+        sentMsgToDivice(ctx, commandSend, msg);
+    }
+
+    private void sentMsgToDivice(ChannelHandlerContext ctx, byte[] commandSend, Object msg) {
         ReferenceCountUtil.retain(msg);
         ctx.writeAndFlush(commandSend);
     }
