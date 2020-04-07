@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.integration.custom.server;
+package org.thingsboard.integration.custom.message;
 
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.encoders.Hex;
@@ -53,7 +53,7 @@ import java.util.List;
  * without time synchronization.
  */
 @Slf4j
-public class SentMsg {
+public class ResponseMsgUtils {
 
     String[] getCommandListExample = {
             "getinfo",

@@ -33,6 +33,7 @@ import org.thingsboard.integration.api.data.*;
 import org.thingsboard.integration.custom.client.TCPClient;
 import org.thingsboard.integration.custom.message.CustomIntegrationMsg;
 import org.thingsboard.integration.custom.message.CustomResponse;
+import org.thingsboard.integration.custom.message.ResponseMsgUtils;
 import org.thingsboard.server.common.data.integration.Integration;
 import org.thingsboard.server.common.msg.TbMsg;
 
@@ -226,10 +227,10 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
                     }
                     String dataStr = new String(downlink.getData(), StandardCharsets.UTF_8);
                     if (dataStr != null && !dataStr.isEmpty()) {
-                        SentMsg sentMsg = new SentMsg();
+                        ResponseMsgUtils responseMsg = new ResponseMsgUtils();
                         List<byte[]> dataBytes = new ArrayList<>();
                         List<String> datalists = Stream.of(dataStr.split(",")).collect(Collectors.toList());
-                        datalists.forEach(datalist -> dataBytes.add(sentMsg.getCommandMsgByteOne(datalist)));
+                        datalists.forEach(datalist -> dataBytes.add(responseMsg.getCommandMsgByteOne(datalist)));
                         List<String> sentValues = Stream.of(metadata.get("payload").split(",")).collect(Collectors.toList());
                         String serialNumber = metadata.get("serialNumber");
                         Map<String, byte[]> sentMsgValue;
