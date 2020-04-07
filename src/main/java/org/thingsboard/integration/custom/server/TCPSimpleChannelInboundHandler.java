@@ -48,7 +48,6 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
         int msgLen = msgBytes.length;
         if (msgLen > 1) {
 //            System.out.println("input1: " + Hex.toHexString(msgBytes));
-
             TCPIntegration chTCPIntegration = this.TCPIntegration;
             this.typeDevice = chTCPIntegration.getTypeDevice();
             /**
