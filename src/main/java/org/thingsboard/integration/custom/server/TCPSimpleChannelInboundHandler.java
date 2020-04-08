@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -47,7 +47,7 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
         byte[] msgBytes = (byte[]) msg;
         int msgLen = msgBytes.length;
         if (msgLen > 1) {
-//            System.out.println("input1: " + Hex.toHexString(msgBytes));
+            System.out.println("input1: " + Hex.toHexString(msgBytes));
             TCPIntegration chTCPIntegration = this.TCPIntegration;
             this.typeDevice = chTCPIntegration.getTypeDevice();
             /**

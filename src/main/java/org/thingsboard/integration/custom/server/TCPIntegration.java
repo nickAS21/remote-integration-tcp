@@ -83,9 +83,9 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
             int port = getBindPort();
             serverChannel = bootstrap.bind(port).sync().channel();
             // for the test with  client
-//            String client_imev1 = "359633100458591";
-//            String client_imev2 = "359633100458592";
-//            client1 = new TCPClient(port, getMsgGeneratorIntervalMs(configuration), client_imev1);
+            String client_imev1 = "868204005647838";
+            String client_imev2 = "359633100458592";
+            client1 = new TCPClient(port, msgGenerationIntervalMs, client_imev1, tcpIntegration.getTypeDevice());
 //            client2 = new TCPClient(port, getMsgGeneratorIntervalMs(configuration), client_imev2);
 
         } catch (Exception e) {
