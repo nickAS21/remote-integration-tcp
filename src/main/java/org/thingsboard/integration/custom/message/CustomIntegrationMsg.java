@@ -19,12 +19,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
-@AllArgsConstructor
 public class CustomIntegrationMsg {
 
     private final String msg;
     private final CustomResponse response;
     private final String imev;
-    private final  String commandCur;
+//    private final  String commandCur;
 
 }
