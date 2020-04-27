@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,17 +29,17 @@ import java.util.*;
 public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<Object> {
     private final UUID sessionId;
     private String serialNumber;
-    private String commandCur;
+    //    private String commandCur;
     private boolean initData = false;
     private int dataPacketLength = 0;
     private int posLast = 0;
     private byte[] msgAllBytes;
-    private TCPIntegration TCPIntegration;
+    private TCPIntegration tcpIntegration;
     private String typeDevice;
 
-    TCPSimpleChannelInboundHandler(TCPIntegration TCPIntegration) {
+    TCPSimpleChannelInboundHandler(TCPIntegration tcpIntegration) {
         this.sessionId = UUID.randomUUID();
-        this.TCPIntegration = TCPIntegration;
+        this.tcpIntegration = tcpIntegration;
     }
 
     @Override
@@ -47,8 +47,10 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
         byte[] msgBytes = (byte[]) msg;
         int msgLen = msgBytes.length;
         if (msgLen > 1) {
-            System.out.println("input1: " + Hex.toHexString(msgBytes));
-            TCPIntegration chTCPIntegration = this.TCPIntegration;
+
+            System.out.println("input2: " + Hex.toHexString(msgBytes)); //  01178001960218033836343337363034393233333931384813001b4b
+
+            TCPIntegration chTCPIntegration = this.tcpIntegration;
             this.typeDevice = chTCPIntegration.getTypeDevice();
             /**
              * Start read msg from buffer
@@ -85,15 +87,15 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
              */
             if (!initData && msgAllBytes != null && msgAllBytes.length > 0) {
                 RequestMsg requestMsg = RequestMsgFabrica.getRequestMsg(this.typeDevice);
-                boolean rez = requestMsg.analysisMsg(this.msgAllBytes,  this.serialNumber, chTCPIntegration, this.dataPacketLength);
+                boolean rez = requestMsg.analysisMsg(this.msgAllBytes, this.serialNumber, chTCPIntegration, this.dataPacketLength);
                 if (rez) {
                     this.serialNumber = requestMsg.getSerialNumber();
                     /**
-                     * sent response ti device
+                     * sent response to device
                      */
                     byte[] commandSend = requestMsg.getCommandSend();
                     if (commandSend != null && commandSend.length > 0) {
-                        sentMsgToDivice(ctx, requestMsg.getCommandSend(), msg);
+                        sentMsgToDivice(ctx, commandSend, msg);
                     }
                     /**
                      * sent data to UpLink
@@ -101,36 +103,49 @@ public class TCPSimpleChannelInboundHandler extends SimpleChannelInboundHandler<
                     byte[] payload = requestMsg.getPayload();
                     if (payload != null && payload.length > 0) {
                         CustomResponse response = new CustomResponse();
-                        chTCPIntegration.process(new CustomIntegrationMsg(Hex.toHexString(payload), response, this.serialNumber, this.commandCur));
+//                        chTCPIntegration.process(new CustomIntegrationMsg(Hex.toHexString(payload), response, this.serialNumber, this.commandCur));
+                        chTCPIntegration.process(new CustomIntegrationMsg(Hex.toHexString(payload), response, this.serialNumber));
+//                        this.commandCur = "null";
                     }
                 }
 
                 /**
                  * After Start session if there are requests in the queue for this device from DownLink
-                 *  Example: getinfo, getver, getstatus, getgps, getio, ggps, getparam 2004, getparam 2005, readio 21, readio 66
+                 *  Example (Teltonika): getinfo, getver, getstatus, getgps, getio, ggps, getparam 2004, getparam 2005, readio 21, readio 66
+                 *  Example (Galileosky):  HeadPack 1110, MainPack 1111000, status, imei, imsi, inall, insys, RS485, statall, EFS 010117,01011712,LED 60
                  */
                 if (chTCPIntegration.sentRequestByte.size() > 0 && chTCPIntegration.sentRequestByte.containsKey(this.serialNumber) && chTCPIntegration.sentRequestByte.get(this.serialNumber).size() > 0) {
                     Map<String, byte[]> commands = chTCPIntegration.sentRequestByte.get(this.serialNumber);
                     chTCPIntegration.sentRequestByte.put(this.serialNumber, commands);
                     if (chTCPIntegration.sentRequestByte.get(this.serialNumber).size() > 0) {
-                        sentMsgToDiviceFromUpLink(ctx, chTCPIntegration, msg);
-                        commands.remove(this.commandCur);
+                        sentMsgToDiviceFromDownLink(ctx, chTCPIntegration, msg);
+
                     }
                 }
             }
         }
     }
 
-    private void sentMsgToDiviceFromUpLink(ChannelHandlerContext ctx, TCPIntegration chTCPIntegration, Object msg) {
+    private void sentMsgToDiviceFromDownLink(ChannelHandlerContext ctx, TCPIntegration chTCPIntegration, Object msg) {
         Map<String, byte[]> commands = chTCPIntegration.sentRequestByte.get(this.serialNumber);
-        commandCur = (String) commands.keySet().toArray()[0];
-        byte[] commandSend = commands.get(commandCur);
-        sentMsgToDivice(ctx, commandSend, msg);
+        RequestMsg requestMsg = RequestMsgFabrica.getRequestMsg(this.typeDevice);
+        String msgStr = Hex.toHexString((byte[]) msg);
+        String commandCurKey = (String) commands.keySet().toArray()[0];
+        if (requestMsg.isResponse(msgStr) != null) {
+            commands.remove(commandCurKey);
+        }
+        if (commands.keySet().toArray().length > 0) {
+            commandCurKey = (String) commands.keySet().toArray()[0];
+            byte[] commandSend = commands.get(commandCurKey);
+            sentMsgToDivice(ctx, commandSend, msg);
+            System.out.println("commandCurKey: " + commandCurKey + " commandSend: " + Hex.toHexString(commandSend));
+        }
     }
 
     private void sentMsgToDivice(ChannelHandlerContext ctx, byte[] commandSend, Object msg) {
         ReferenceCountUtil.retain(msg);
         ctx.writeAndFlush(commandSend);
     }
+
 
 }

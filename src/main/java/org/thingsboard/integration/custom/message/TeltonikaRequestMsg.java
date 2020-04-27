@@ -163,4 +163,10 @@ public class TeltonikaRequestMsg extends RequestMsg {
         System.arraycopy(bytesCrc_16_val, 0, bytes, pos, len);
         return bytes;
     }
+
+    @Override
+    public String isResponse (String response) {
+        return response;
+
+    }
 }

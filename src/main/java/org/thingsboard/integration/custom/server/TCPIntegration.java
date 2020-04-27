@@ -31,9 +31,7 @@ import org.thingsboard.integration.api.IntegrationContext;
 import org.thingsboard.integration.api.TbIntegrationInitParams;
 import org.thingsboard.integration.api.data.*;
 import org.thingsboard.integration.custom.client.TCPClient;
-import org.thingsboard.integration.custom.message.CustomIntegrationMsg;
-import org.thingsboard.integration.custom.message.CustomResponse;
-import org.thingsboard.integration.custom.message.ResponseMsgUtils;
+import org.thingsboard.integration.custom.message.*;
 import org.thingsboard.server.common.data.integration.Integration;
 import org.thingsboard.server.common.msg.TbMsg;
 
@@ -52,18 +50,20 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
 
     private NioEventLoopGroup bossGroup;
     private NioEventLoopGroup workGroup;
+//    private TCPSimpleChannelInboundHandler tcpSimpleChannelInboundHandler;
     private Channel serverChannel;
+    private Long commandNumber;
     private TCPClient client1;
     private TCPClient client2;
     public Map<String, Map<String, byte[]>> sentRequestByte;
     private String codecId22 = "16";
-    private String codecId22Status = "Requests sent, pending session status";
+//    private String codecId22Status = "Requests sent, pending session status";
 
     @Override
     public void init(TbIntegrationInitParams params) throws Exception {
         super.init(params);
         sentRequestByte = new HashMap<>();
-        Integration inter = this.configuration;
+//        Integration inter = this.configuration;
 //        JsonNode configuration = mapper.readTree(params.getConfiguration().getConfiguration().get("configuration").asText());
         try {
             bossGroup = new NioEventLoopGroup();
@@ -83,9 +83,9 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
             int port = getBindPort();
             serverChannel = bootstrap.bind(port).sync().channel();
             // for the test with  client
-            String client_imev1 = "868204005647838";
-            String client_imev2 = "359633100458592";
-            client1 = new TCPClient(port, msgGenerationIntervalMs, client_imev1, tcpIntegration.getTypeDevice());
+//            String client_imev1 = "868204005647838";
+//            String client_imev2 = "359633100458592";
+//            client1 = new TCPClient(port, msgGenerationIntervalMs, client_imev1, tcpIntegration.getTypeDevice());
 //            client2 = new TCPClient(port, getMsgGeneratorIntervalMs(configuration), client_imev2);
 
         } catch (Exception e) {
@@ -122,7 +122,8 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
         String status = "OK";
         Exception exception = null;
         try {
-            response.setResult(doProcessUplink(customIntegrationMsg.getMsg(), customIntegrationMsg.getImev(), customIntegrationMsg.getCommandCur()));
+//            response.setResult(doProcessUplink(customIntegrationMsg.getMsg(), customIntegrationMsg.getImev(), customIntegrationMsg.getCommandCur()));
+            response.setResult(doProcessUplink(customIntegrationMsg.getMsg(), customIntegrationMsg.getImev()));
             integrationStatistics.incMessagesProcessed();
         } catch (Exception e) {
             log.debug("Failed to apply data converter function: {}", e.getMessage(), e);
@@ -142,14 +143,17 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
         }
     }
 
-    private String doProcessUplink(String msg, String imei, String commandCur) throws Exception {
+    private String doProcessUplink(String msg, String imei) throws Exception {
         byte[] data = mapper.writeValueAsBytes(msg);
         Map<String, String> metadataMap = new HashMap<>(metadataTemplate.getKvMap());
         metadataMap.put("imei", imei);
-        metadataMap.put("commandQuantity", "1");
-        if (commandCur != null && !commandCur.isEmpty()) {
-            metadataMap.put("request", commandCur);
-        } else metadataMap.put("request", "1");
+//        if (commandCur != null && !commandCur.isEmpty()) {
+//            metadataMap.put("request", commandCur);
+//            metadataMap.put("commandQuantity", "1");
+//        } else {
+//            metadataMap.put("request", "null");
+//            metadataMap.put("commandQuantity", "0");
+//        }
         List<UplinkData> uplinkDataList = convertToUplinkDataList(context, data, new UplinkMetaData(getUplinkContentType(), metadataMap));
         if (uplinkDataList != null && !uplinkDataList.isEmpty()) {
             for (UplinkData uplinkData : uplinkDataList) {
@@ -202,6 +206,10 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
     @Override
     public void onDownlinkMsg(IntegrationDownlinkMsg msg) {
         TbMsg msgTb = msg.getTbMsg();
+        commandNumber = (commandNumber == null) ? 0L : commandNumber;
+        String comm = commandNumber.toString();
+        msgTb.getMetaData().getData().put("commandNumber", commandNumber.toString());
+
         logDownlink(context, msgTb.getType(), msgTb);
         if (downlinkConverter != null) {
             processDownLinkMsg(context, msgTb);
@@ -227,12 +235,15 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
                     }
                     String dataStr = new String(downlink.getData(), StandardCharsets.UTF_8);
                     if (dataStr != null && !dataStr.isEmpty()) {
-                        ResponseMsgUtils responseMsg = new ResponseMsgUtils();
+//                        ResponseMsgUtils responseMsg = new ResponseMsgUtils();
                         List<byte[]> dataBytes = new ArrayList<>();
                         List<String> datalists = Stream.of(dataStr.split(",")).collect(Collectors.toList());
-                        datalists.forEach(datalist -> dataBytes.add(responseMsg.getCommandMsgByteOne(datalist)));
+                        RequestMsg requestMsg = RequestMsgFabrica.getRequestMsg(getTypeDevice());
+//                        datalists.forEach(datalist -> dataBytes.add(responseMsg.getCommandMsgByteOne(datalist)));
+                        datalists.forEach(datalist -> dataBytes.add(requestMsg.getCommandMsgByteOne(datalist)));
                         List<String> sentValues = Stream.of(metadata.get("payload").split(",")).collect(Collectors.toList());
                         String serialNumber = metadata.get("serialNumber");
+                        commandNumber = Long.parseLong(metadata.get("commandNumber"));
                         Map<String, byte[]> sentMsgValue;
                         if (sentRequestByte.containsKey(serialNumber) && sentRequestByte.get(serialNumber).size() > 0) {
                             sentMsgValue = sentRequestByte.get(serialNumber);
@@ -240,7 +251,9 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
                             sentMsgValue = new HashMap<>();
                         }
                         for (int i = 0; i < datalists.size(); i++) {
-                            sentMsgValue.put(sentValues.get(i), dataBytes.get(i));
+                            int pos = sentValues.get(i).indexOf(":");
+                            String sentCommNumber = (pos > 0) ? sentValues.get(i).substring(0, pos) : sentValues.get(i);
+                            sentMsgValue.put(sentCommNumber, dataBytes.get(i));
                         }
                         sentRequestByte.put(serialNumber, sentMsgValue);
                         sentUplinkPendingRequests(metadata.get("payload"), metadata.get("serialNumber"));
@@ -255,6 +268,7 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
 
     private void sentUplinkPendingRequests(String payload, String imeiHex) {
         CustomResponse response = new CustomResponse();
-        this.process(new CustomIntegrationMsg(this.codecId22 + payload, response, imeiHex, codecId22Status));
+//        this.process(new CustomIntegrationMsg(this.codecId22 + payload, response, imeiHex, codecId22Status));
+        this.process(new CustomIntegrationMsg(this.codecId22 + payload, response, imeiHex));
     }
 }

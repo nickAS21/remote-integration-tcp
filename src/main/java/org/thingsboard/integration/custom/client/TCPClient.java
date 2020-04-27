@@ -87,7 +87,8 @@ public class TCPClient {
     private byte[] generateFirstPacket() {
         String payload = "011780011102df03383638323034303035363437383338043200869C";
         int signatura = 1;
-        int dataPacketLength = 23;
+//        int dataPacketLength = 23;
+        int dataPacketLength = 7;
         int sizePacketlen = 2;
         int headerConnectLen = 1;
         int crcLen = 2;
@@ -113,11 +114,13 @@ public class TCPClient {
         msgAllBytes[off += len] = (byte) typeUnitValue;
         msgAllBytes[off += len] = (byte) firmwareVersionId;
         msgAllBytes[off += len] = (byte) firmwareVersionValue;
-        msgAllBytes[off += len] = (byte) IMEI_Id;
-        byte[] imevBB = client_imev.getBytes();
-//        len = imevBB.length;
-        System.arraycopy(imevBB, 0, msgAllBytes, off += len, imevBB.length);
-        off += imevBB.length;
+
+//        msgAllBytes[off += len] = (byte) IMEI_Id;
+//        byte[] imevBB = client_imev.getBytes();
+////        len = imevBB.length;
+//        System.arraycopy(imevBB, 0, msgAllBytes, off += len, imevBB.length);
+//        off += imevBB.length;
+        off += len;
         len = 1;
         msgAllBytes[off] = (byte) deviceNumberId;
         msgAllBytes[off += len] = deviceNumberValueArray[0];
