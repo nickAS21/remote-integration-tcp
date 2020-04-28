@@ -1,9 +1,28 @@
+/**
+ * Copyright © 2020-2019 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.thingsboard.integration.custom.message;
 
 
 import org.bouncycastle.util.encoders.Hex;
 import org.thingsboard.integration.custom.server.TCPIntegration;
 import org.thingsboard.integration.util.Crc16_IBM;
+
+import java.nio.ByteBuffer;
+
+import static org.thingsboard.integration.util.Utils.hexStringToByteArray;
 
 public class TeltonikaRequestMsg extends RequestMsg {
 
@@ -95,5 +114,59 @@ public class TeltonikaRequestMsg extends RequestMsg {
             }
         }
         return result;
+    }
+
+
+    String[] getCommandListExample = {
+            "getinfo",
+            "getver",
+            "getstatus",
+            "getgps",
+            "getio",
+            "ggps",
+            "cpureset",
+            "getparam 133",
+            "getparam 102",
+            "setparam 133:0",
+            "setparam 102:2",
+            "readio 21",
+            "readio 66",
+            "getparam 2004",                        // Server settings domen: my.org.ua;  his.thingsboard.io or ifconfig.co
+            "setparam 2004:his.thingsboard.io",
+            "setparam 2004:my.org.ua",
+            "getparam 2005",                        //  Server settings port: 1994
+            "getparam 2006"                         //  Server settings pototokol: TCP - 0, UDP - 1
+    };
+
+    /**
+     *
+     sent getver :  000000000000000e0c010500000006676574766572010000a4c2
+     sent getinfo : 000000000000000f0c010500000007676574696e666f0100004312
+     */
+    @Override
+    public byte[] getCommandMsgByteOne(String command) {
+        byte[] bytesPacket = hexStringToByteArray(command);
+        // CRC
+        Crc16_IBM crc16_IBM = new Crc16_IBM(0xA001, false);
+        int crc_16_val = crc16_IBM.calculate(bytesPacket, 0);
+        byte[] bytesCrc_16_val = ByteBuffer.allocate(4).putInt(crc_16_val).array();
+        byte[] bytes = new byte[bytesPacket.length + 12];
+        int pos = 4;
+        int len = 4;
+        byte[] bytesParamValueLength = ByteBuffer.allocate(4).putInt(bytesPacket.length).array();
+        System.arraycopy(bytesParamValueLength, 0, bytes, pos, len);
+        pos += len;
+        len = bytesPacket.length;
+        System.arraycopy(bytesPacket, 0, bytes, pos, len);
+        pos += len;
+        len = 4;
+        System.arraycopy(bytesCrc_16_val, 0, bytes, pos, len);
+        return bytes;
+    }
+
+    @Override
+    public String isResponse (String response) {
+        return response;
+
     }
 }
