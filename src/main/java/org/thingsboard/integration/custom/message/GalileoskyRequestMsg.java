@@ -83,7 +83,7 @@ public class GalileoskyRequestMsg extends RequestMsg {
 //            else {
             byte[] dataPacketLengthB = new byte[2];
 //            dataPacketLengthB[0] = msgBytes[2];
-//            dataPacketLengthB[1] = msgBytes[1];
+//            dataPacketLengthBUploading of archive has been scheduled[1] = msgBytes[1];
             dataPacketLengthB[0] = msgBytes[1];
             dataPacketLengthB[1] = msgBytes[2];
 
@@ -163,6 +163,7 @@ public class GalileoskyRequestMsg extends RequestMsg {
     }
 
     String[] getCommandListExample = {
+            "status; imei; EFS 28042008,28042009; statall; LED 60, imsi; HeadPack 1110; MainPack 1111000",
             "HeadPack 1110",    // Ответ: HeadPack = 0000000000000000000000000000000000000000000000000000000000001110b
             "MainPack 1111000",    // Ответ: HeadPack = 0000000000000000000000000000000000000000000000000000000000001110b
             "status",

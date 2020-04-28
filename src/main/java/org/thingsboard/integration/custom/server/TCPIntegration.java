@@ -57,6 +57,7 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
     private TCPClient client2;
     public Map<String, Map<String, byte[]>> sentRequestByte;
     private String codecId22 = "16";
+    private String separator = ";";
 //    private String codecId22Status = "Requests sent, pending session status";
 
     @Override
@@ -237,11 +238,11 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
                     if (dataStr != null && !dataStr.isEmpty()) {
 //                        ResponseMsgUtils responseMsg = new ResponseMsgUtils();
                         List<byte[]> dataBytes = new ArrayList<>();
-                        List<String> datalists = Stream.of(dataStr.split(",")).collect(Collectors.toList());
+                        List<String> datalists = Stream.of(dataStr.split(separator)).collect(Collectors.toList());
                         RequestMsg requestMsg = RequestMsgFabrica.getRequestMsg(getTypeDevice());
 //                        datalists.forEach(datalist -> dataBytes.add(responseMsg.getCommandMsgByteOne(datalist)));
                         datalists.forEach(datalist -> dataBytes.add(requestMsg.getCommandMsgByteOne(datalist)));
-                        List<String> sentValues = Stream.of(metadata.get("payload").split(",")).collect(Collectors.toList());
+                        List<String> sentValues = Stream.of(metadata.get("payload").split(separator)).collect(Collectors.toList());
                         String serialNumber = metadata.get("serialNumber");
                         commandNumber = Long.parseLong(metadata.get("commandNumber"));
                         Map<String, byte[]> sentMsgValue;
