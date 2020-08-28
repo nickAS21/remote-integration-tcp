@@ -21,8 +21,8 @@ server:
   port: "${HTTP_BIND_PORT:8082}"
 
 integration:
-  routingKey: "${INTEGRATION_ROUTING_KEY:7a80e52612f80f9259e141244e7e9ea5}"
-  secret: "${INTEGRATION_SECRET:rxju25q44j3vk4nev5xj}"
+  routingKey: "${INTEGRATION_ROUTING_KEY:78d253c6-a303-f3c5-6d23-d2f33f7c2336}"
+  secret: "${INTEGRATION_SECRET:c6dtgfpdnirlv8ax902q}"
   allow_local_network_hosts: "${INTEGRATION_ALLOW_LOCAL_NETWORK_HOSTS:true}"
   statistics:
     # Enable/disable integration statistics
@@ -43,7 +43,7 @@ executors:
 
 rpc:
   host: "${PRC_HOST:localhost}"
-  port: "${RPC_PORT:50051}"
+  port: "${RPC_PORT:9090}"
   timeout: "${RPC_TIMEOUT:5}" # Timeout in seconds for channel termination
   client_id: "${RPC_CLIENT_ID:remote}"
   ssl:

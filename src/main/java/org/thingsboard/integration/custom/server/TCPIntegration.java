@@ -46,7 +46,7 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
 
     private static final int bindPort = 1990;
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final long msgGenerationIntervalMs = 60000;
+    private static final long msgGenerationIntervalMs = 600000;
 
     private NioEventLoopGroup bossGroup;
     private NioEventLoopGroup workGroup;
@@ -84,10 +84,10 @@ public class TCPIntegration extends AbstractIntegration<CustomIntegrationMsg> {
             int port = getBindPort();
             serverChannel = bootstrap.bind(port).sync().channel();
             // for the test with  client
-//            String client_imev1 = "868204005647838";
-//            String client_imev2 = "359633100458592";
-//            client1 = new TCPClient(port, msgGenerationIntervalMs, client_imev1, tcpIntegration.getTypeDevice());
-//            client2 = new TCPClient(port, getMsgGeneratorIntervalMs(configuration), client_imev2);
+            String client_imev1 = "868204005647838";
+            String client_imev2 = "359633100458592";
+            client1 = new TCPClient(port, msgGenerationIntervalMs, client_imev1, tcpIntegration.getTypeDevice());
+//            client2 = new TCPClient(port, msgGenerationIntervalMs, client_imev2, tcpIntegration.getTypeDevice());
 
         } catch (Exception e) {
             log.error("Failed to init TCP server!", e);
